@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import './WeatherBanner.css'
 
-const API_BASE = 'http://localhost:8000'
+const API_BASE = 'https://solar-kharda.onrender.com'
 
 function WeatherBanner() {
   const [latest, setLatest] = useState(null)

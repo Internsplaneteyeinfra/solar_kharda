@@ -11,7 +11,7 @@ import FilterPanel from './components/FilterPanel'
 import { getPanelById } from './services/panels'
 import './App.css'
 
-const API_BASE = 'http://localhost:8000'
+const API_BASE = 'https://solar-kharda.onrender.com'
 const PARAMETER_OPTIONS = Object.freeze([
   { value: 'LST', label: 'Panel Temperature' },
   { value: 'SWIR', label: 'Reflectance' },
