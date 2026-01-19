@@ -10,20 +10,27 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import time
 
-# Add parent directory to path to import main module
+# Add backend directory to path so we can import app modules
 sys.path.insert(0, str(Path(__file__).parent))
 
-from database import (
+from app.kharda.database import (
     init_database, insert_timeseries_data, insert_soiling_data,
     insert_monthly_lst, update_data_availability, get_data_statistics
 )
-from main import (
-    load_panel_feature_collection, get_lst_data, get_swir_data,
-    get_soiling_data, get_ndvi_data, get_ndwi_data, get_visible_mean_data,
-    get_lst_monthly, POLYGONS_PATH
+
+from app.kharda.services import (
+    get_lst_data, get_swir_data, get_soiling_data, 
+    get_ndvi_data, get_ndwi_data, get_visible_mean_data,
+    get_lst_monthly
 )
 
-# Parameters to migrate
+from app.common.gee import init_gee
+
+# Initialize Earth Engine
+init_gee()
+
+# Constants
+POLYGONS_PATH = Path(__file__).parent.parent / "asset" / "solar_panel_polygons.geojson"
 PARAMETERS = ['LST', 'SWIR', 'NDVI', 'NDWI', 'VISIBLE', 'SOILING']
 
 
@@ -300,14 +307,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     if args.monthly_only:
-        # Only migrate monthly data
+        # Initialize database
+        init_database()
         end_date = datetime.now()
         start_date = end_date - timedelta(days=args.years * 365)
-        asyncio.run(migrate_monthly_lst(
-            start_date.strftime('%Y-%m-%d'),
-            end_date.strftime('%Y-%m-%d')
-        ))
+        asyncio.run(migrate_monthly_lst(start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
     else:
-        # Migrate all data
         asyncio.run(migrate_all_data(years=args.years, sample_panels=args.sample))
-

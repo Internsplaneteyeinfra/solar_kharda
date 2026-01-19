@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Scoped styles for Solar Suitability - all prefixed with ss- */
+.ss-container {
+  font-family: 'Inter', sans-serif;
+  background-color: #f8fafc;
+  color: #0f172a;
+ 
+}
+
+.ss-container .loader,
+.ss-container .ss-loader {
+  border-top-color: #3b82f6;
+  animation: ss-spin 1s linear infinite;
+}
+
+@keyframes ss-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ss-container #results-section {
+  transition: opacity 0.5s ease-in-out;
+}
+
+.ss-container .custom-popup .leaflet-popup-content-wrapper,
+.ss-container .ss-custom-popup .leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.ss-container .custom-popup .leaflet-popup-content,
+.ss-container .ss-custom-popup .leaflet-popup-content {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.ss-container .custom-popup .leaflet-popup-tip,
+.ss-container .ss-custom-popup .leaflet-popup-tip {
+  background: white;
+  border: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.ss-container .leaflet-interactive {
+  transition: all 0.2s ease-in-out;
+}
+
+.ss-container .map-control-btn,
+.ss-container .ss-map-control-btn {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ss-container .map-control-btn:hover,
+.ss-container .ss-map-control-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.ss-container .map-control-btn.active,
+.ss-container .ss-map-control-btn.active {
+  background: rgba(59, 130, 246, 0.9);
+  color: white;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.ss-container #ss-map-legend,
+.ss-container #map-legend {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  max-width: 12rem;
+}
+
+.ss-container #ss-progress-bar,
+.ss-container #progress-bar {
+  width: 0%;
+}
+
+.ss-container .ss-header-gradient {
+  background: linear-gradient(135deg, #2b6cb0, #3182ce);
+}
+
+.ss-container #upload-area.dragover {
+  border-color: #2563eb;
+  background: #f8fafc;
+}
+
+.ss-container .map-options-note,
+.ss-container .ss-map-options-note {
+  color: #475569;
+}
+
+.ss-container.app-shell,
+.ss-container .ss-app-shell {
+  background-color: #f8fafc;
+}
+
+.ss-app-shell {
+  min-height: 100%;
+  overflow-y: auto;
+}

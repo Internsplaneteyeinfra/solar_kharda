@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+httpx
+earthengine-api
+google-auth
+google-auth-oauthlib
+shapely
+pyproj
+python-dotenv
+requests
+fastkml
+lxml

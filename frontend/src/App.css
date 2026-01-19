@@ -258,29 +258,39 @@
 .app-container {
   display: flex;
   height: calc(100vh - 40px);
-  width: 100vw;
+  width: 100%;
   padding-top: 40px;
   margin-top: 0;
+  height: auto;
+  overflow-x: hidden;
 }
 
 .control-panel {
+  position: fixed;
   width: 335px;
   background: rgb(62, 110, 120);
   padding: 0;
   border-right: 1px solid rgba(255, 255, 255, 0.2);
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
   color: white;
   margin-bottom: none;
   height: calc(100vh - 40px);
   z-index: 1000;
+   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   
+}
+
+.control-panel::-webkit-scrollbar {
+  display: none;
 }
 
 .control-panel-header {
   padding: 22px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  color: whitesmoke;
 }
 
 .control-panel-header-top {
@@ -291,9 +301,13 @@
 }
 
 .control-panel-header h2 {
-  font-size: 24px;
-  margin: 0;
+  font-size: 25px;
+  margin: 5px;
+  font-weight: 700;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   text-align: left;
+  color: rgb(232, 219, 232);
+  text-shadow: #040b12 1px 2.5px 2px;
 }
 
 .compare-trigger-button {
@@ -325,6 +339,7 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+  overflow-y: visible;
 }
 
 .param-hint {
@@ -342,32 +357,93 @@
 }
 
 .control-group label {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 12px;
   letter-spacing: 0.3px;
   text-transform: uppercase;
+  color: #040b12;
 }
 
 .parameter-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 6px; 
+  width: 100%;
+  overflow: hidden;
+  box-sizing: hidden;
+  
 }
 
 .parameter-checkbox {
   display: flex;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.06);
-  cursor: pointer;
-  transition: border 0.2s ease, background 0.2s ease;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 8px;
+  text-align: center;
 }
 
-.parameter-checkbox input {
-  margin-top: 4px;
+
+.parameter-grid,
+.parameter-checkbox {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.parameter-label,
+.parameter-desc {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.sidebar,
+.left-panel,
+.panel {
+  overflow: hidden;
+}
+
+@media (min-width: 1100px) {
+  .parameter-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.parameter-checkbox {
+  position: relative;
+}
+
+.parameter-checkbox input[type="checkbox"] {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  transform: scale(0.8);
+}
+
+
+.parameter-checkbox {
+  
+  width: 100%;
+  height: 50px;
+  padding: 6px 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  
+  border-radius: 6px;
+  border: 3px solid rgba(10, 9, 9, 0.15);
+  background: rgba(3, 37, 51, 0.06);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+
+/* Hover effect */
+.parameter-checkbox:hover {
+  border-color: #4f46e5;
+  background: #f8f9ff;
 }
 
 .parameter-checkbox.checked {
@@ -376,23 +452,24 @@
 }
 
 .parameter-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+ text-align: center;
 }
 
 .parameter-label {
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
   color: white;
   letter-spacing: 0.4px;
+  white-space-collapse: break-spaces;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .parameter-desc {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.75);
-  line-height: 1.4;
-}
+  display: none;
+} 
 
 .input-wrapper select,
 .input-wrapper input[type="date"] {
@@ -411,8 +488,16 @@
 }
 
 .row-two {
-   grid-template-columns: 1fr 1fr;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
+@media (max-width: 480px) {
+  .row-two {
+    grid-template-columns: 1fr;
+  }
+}
+
 
 .polygon-slider {
   width: 100%;
@@ -428,20 +513,21 @@
   z-index: 1;
   margin-top: 0;
   background: rgb(40, 80, 90);
-  overflow: hidden;
-  border-radius: 5px;
+  overflow: auto;
+  border-radius: 0;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 24px 48px rgba(15, 23, 42, 0.32);
   width: 100% !important;
   height: 100% !important;
   min-height: 550px; /* optional: set a minimum height */
   min-width: 500px; /* optional: set a minimum width */
-
+  margin-right: 0;
 }
 
 .map-container .leaflet-container {
   background: rgb(40, 80, 90) !important;
   border-radius: inherit;
+  margin: 0;
 }
 
 .map-container .leaflet-tile-container img {
@@ -495,7 +581,7 @@
 
 /* Hide popup white backgrounds */
 .leaflet-popup-content-wrapper {
-  background: rgb(64, 116, 126) !important;
+  background: rgb(202, 213, 215) !important;
   color: white !important;
 }
 
@@ -507,6 +593,7 @@
 .leaflet-container .leaflet-control-attribution {
   background: rgba(40, 80, 90, 0.8) !important;
   color: white !important;
+
 }
 
 .main-content.compare-active .map-container  {
@@ -679,7 +766,8 @@
   background: rgba(40, 80, 90, 0.95);
   border-left: 0.5px solid rgba(16, 8, 8, 0.2);
   box-sizing: border-box;
-  margin-left: 3px;
+  margin-left: 0;
+  overflow-y: auto;
 }
 
 .panels-header {
@@ -693,8 +781,8 @@
 
 .panels-count {
   font-size: 14px;
-  font-weight: 600;
-  color: white;
+  font-weight: 700;
+  color:#040b12;
 }
 
 .panes-list {
@@ -960,23 +1048,26 @@
 /* Legend removed from map in favour of compare mode legend */
 
 .main-content {
-  margin-top: 10px;
+  margin-top: 1px;
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: auto;
   position: relative;
-  padding: 20px;
+  padding: 2px;
   box-sizing: border-box;
   transition: padding-right 0.3s ease;
+  min-height: 100%;
 }
 
-.main-content.with-panels {
-  padding-right: calc(355px + 3px);
+.main-content{
+  padding-right: 0;
 }
+
+
 
 .main-content.compare-active {
-  grid-template-columns: 4fr 2fr; /* bigger map, smaller panel */
+  grid-template-columns: 5fr 2fr; /* bigger map, smaller panel */
   height: calc(100vh - 40px);
 }
 
@@ -1154,7 +1245,7 @@
   border-collapse: collapse;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-  overflow: hidden;
+  
 }
 
 .compare-table th,
@@ -1329,3 +1420,90 @@
   }
 }
 
+.leaflet-control-zoom leaflet-bar leaflet-control {  
+  padding-bottom: 2px;  
+  
+}
+
+.map-view-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.map-view-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #040b12;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 22px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  transition: 0.3s;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #4ade80;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.map-view-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.map-view-block {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-right: 10px;
+}
+
+.map-view-block label {
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: #040b12;
+}
+
+.map-view-block select {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+}

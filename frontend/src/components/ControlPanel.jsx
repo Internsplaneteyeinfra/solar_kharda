@@ -12,7 +12,7 @@ const PARAMETER_DESCRIPTIONS = {
 function ControlPanel({
   selectedParameters,
   onToggleParameter,
-  parameterOptions,
+  parameterOptions = [],
   startDate,
   setStartDate,
   endDate,
@@ -24,72 +24,49 @@ function ControlPanel({
   onLogout,
   onAnalyze,
   analyzeLoading,
-  onEnterCompare
+  onEnterCompare = () => {}
 }) {
-  const handlePolygonToggle = (e) => {
-    setShowPolygons(e.target.value === '1')
-  }
+  
 
   return (
     <div className="control-panel">
       <div className="control-panel-header">
         <h2>Solar Farm Dashboard</h2>
       </div>
+
+      
       
       <div className="control-panel-content">
-        <div className="control-group">
-          <label>
-            Map View
-          </label>
-          <div className="input-wrapper">
-            <select value={mapView} onChange={(e) => setMapView(e.target.value)}>
-              <option value="map">Map View</option>
-              <option value="satellite">Satellite View</option>
-            </select>
-          </div>
-        </div>
+        <div className="map-view-block">
+  <label>Map View</label>
 
-        <div className="control-group">
-          <label>
-            Polygons
-          </label>
-          <div className="slider-wrapper">
-            <input
-              type="range"
-              min="0"
-              max="1"
-              value={showPolygons ? 1 : 0}
-              onChange={handlePolygonToggle}
-              className="polygon-slider"
-            />
-          </div>
-        </div>
+  <div className="map-view-controls">
+    <select
+      value={mapView}
+      onChange={(e) => setMapView(e.target.value)}
+    >
+      <option value="map">Map View</option>
+      <option value="satellite">Satellite View</option>
+    </select>
 
-        <div className="control-group">
-          <label>
-            Parameters
-          </label>
-          <div className="parameter-grid">
-            {parameterOptions.map((option) => {
-              const isChecked = selectedParameters.includes(option.value)
-              return (
-                <label key={option.value} className={`parameter-checkbox ${isChecked ? 'checked' : ''}`}>
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={() => onToggleParameter(option.value)}
-                  />
-                  <div className="parameter-info">
-                    <span className="parameter-label">{option.label}</span>
-                    <span className="parameter-desc">{PARAMETER_DESCRIPTIONS[option.value] || ''}</span>
-                  </div>
-                </label>
-              )
-            })}
-          </div>
-        </div>
+    {/* ON / OFF Toggle beside map view */}
+      
+<div className="map-view-block">
+<label>polygons</label>
+    <label className="toggle-switch"> 
+      <input
+        type="checkbox"
+        checked={showPolygons}
+        onChange={(e) => setShowPolygons(e.target.checked)}
+      />
+      <span className="toggle-slider"></span>
+    </label>
+  </div>
+</div>
+</div>
 
-        <div className="row-two">
+
+<div className="row-two">
           <div className="control-group">
             <label>
               Start Date
@@ -116,6 +93,32 @@ function ControlPanel({
             </div>
           </div>
         </div>
+      
+        <div className="control-group">
+          <label>
+            Parameters
+          </label>
+          <div className="parameter-grid">
+            {parameterOptions.map((option) => {
+              const isChecked = selectedParameters.includes(option.value)
+              return (
+                <label key={option.value} className={`parameter-checkbox ${isChecked ? 'checked' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => onToggleParameter(option.value)}
+                  />
+                  <div className="parameter-info">
+                    <span className="parameter-label">{option.label}</span>
+                    <span className="parameter-desc">{PARAMETER_DESCRIPTIONS[option.value] || ''}</span>
+                  </div>
+                </label>
+              )
+            })}
+          </div>
+        </div>
+
+        
 
         <div className="control-group">
           <button 
@@ -152,10 +155,4 @@ function ControlPanel({
   )
 }
 
-ControlPanel.defaultProps = {
-  onEnterCompare: () => {},
-  parameterOptions: []
-}
-
 export default ControlPanel
-

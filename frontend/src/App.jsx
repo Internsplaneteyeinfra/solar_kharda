@@ -1,3 +1,4 @@
+import { Routes, Route, useNavigate } from "react-router-dom";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { MapContainer, TileLayer, GeoJSON, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -10,8 +11,13 @@ import ComparePanel from './components/ComparePanel'
 import FilterPanel from './components/FilterPanel'
 import { getPanelById } from './services/panels'
 import './App.css'
+import SolarSuitability from "./components/SolarSuitability"
 
-const API_BASE = 'https://solar-kharda.onrender.com'
+import ThreeCards from "./components/ThreeCards" //cards page
+
+import SolarAnalyzer from "./components/SolarAnalyzer"
+
+const API_BASE = 'http://localhost:8000' // Adjust as needed
 const PARAMETER_OPTIONS = Object.freeze([
   { value: 'LST', label: 'Panel Temperature' },
   { value: 'SWIR', label: 'Reflectance' },
@@ -69,11 +75,15 @@ function MapClickHandler({ onPanelClick, selectedPanel }) {
   })
   return null
 }
+const ProtectedRoute = ({ isAuthed, setIsAuthed, children }) => {
+  if (!isAuthed) {
+    return <Login onSuccess={() => setIsAuthed(true)} />
+  }
+  return children
+}
 
-function App() {
-  const [isAuthed, setIsAuthed] = useState(() => {
-    return localStorage.getItem('sf_auth') === '1'
-  })
+function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
+  const navigate = useNavigate()
   const [polygons, setPolygons] = useState(null)
   const [allPanelIds, setAllPanelIds] = useState([]) // Sorted list of all panel IDs
   const [selectedPanel, setSelectedPanel] = useState(null)
@@ -125,7 +135,7 @@ function App() {
       console.log('[DEBUG] Fetching all panels LST data...', { rangeStart, rangeEnd })
       const response = await axios.get(`${API_BASE}/api/all-panels-lst`, {
         params: { start_date: rangeStart, end_date: rangeEnd },
-        timeout: 120000
+        timeout: 300000
       })
       const lstData = response.data?.panel_lst || {}
 
@@ -967,27 +977,23 @@ function App() {
     })
   }
 
-  const handleLogin = () => {
-    setIsAuthed(true)
-    localStorage.setItem('sf_auth', '1')
-  }
+
 
   const handleLogout = () => {
     setIsAuthed(false)
     localStorage.removeItem('sf_auth')
+    localStorage.removeItem('sf_show_cards')
     setCompareMode(false)
     setCompareState({ ...defaultCompareState })
     setFilterMode(false)
     setFilterMatchedIds(null)
+    navigate('/')
   }
 
   const isAltMode = compareMode || filterMode
   const appContainerClass = isAltMode ? 'app-container compare-mode' : 'app-container'
   const mainContentClass = isAltMode ? 'main-content compare-active' : 'main-content with-panels'
 
-  if (!isAuthed) {
-    return <Login onSuccess={handleLogin} />
-  }
 
   return (
     <>
@@ -1106,6 +1112,50 @@ function App() {
         </div>
       </div>
     </>
+  )
+}
+
+function App() {
+  const [isAuthed, setIsAuthed] = useState(false)
+
+  const handleLogin = () => {
+    setIsAuthed(true)
+  }
+
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={<Login onSuccess={handleLogin} />}
+      />
+
+      <Route
+        path="/cards"
+        element={
+          <ProtectedRoute isAuthed={isAuthed} setIsAuthed={setIsAuthed}>
+            <ThreeCards />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/solar-analyzer"
+        element={
+          <ProtectedRoute isAuthed={isAuthed} setIsAuthed={setIsAuthed}>
+            <SolarAnalyzerApp isAuthed={isAuthed} setIsAuthed={setIsAuthed} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/solar-suitability"
+        element={
+          <ProtectedRoute isAuthed={isAuthed} setIsAuthed={setIsAuthed}>
+            <SolarSuitability />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
   )
 }
 

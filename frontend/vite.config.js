@@ -3,15 +3,16 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  assetsInclude: ['**/*.kml'],
   server: {
     port: 3000,
     proxy: {
       '/api': {
-        target: 'https://solar-kharda.onrender.com',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/polygons': {
-        target: 'https://solar-kharda.onrender.com',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       }
     }

@@ -1,0 +1,32 @@
+{
+  "ghi": 5.851204281701144,
+  "slope": 1.909359765229782,
+  "elevation": 866.7176101823711,
+  "temperature": 31.53402044763749,
+  "landCover": 60,
+  "shading": 177.74610562310036,
+  "dust": 98.14683214325213,
+  "windSpeed": 11.841648964551686,
+  "waterAvailability": null,
+  "soilStability": 149.31952887538,
+  "floodRisk": 0,
+  "ndvi": 0.06178339698481596,
+  "red": 3338.0963145896667,
+  "nir": 3777.064526342454,
+  "swir1": 4572.937357522798,
+  "swir2": 4127.839728976698,
+  "proximityToRoads": 10.0,
+  "proximityToLines": 3.1614406623103584,
+  "powerLineDetails": {
+    "aerialDistance": 3.1614406623103584,
+    "roadDistance": null,
+    "nearestPowerLine": {
+      "coordinates": [
+        -114.98858205269552,
+        34.97705887844412
+      ],
+      "voltage": "500000"
+    }
+  },
+  "seismicRisk": 2
+}

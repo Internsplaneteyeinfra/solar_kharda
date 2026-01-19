@@ -115,8 +115,8 @@ Check database statistics:
 # Via API
 curl http://localhost:8000/api/database/stats
 
-# Or using Python
-python -c "from database import get_data_statistics; import json; print(json.dumps(get_data_statistics(), indent=2))"
+# Or using Python (from inside backend/)
+python -c "from app.kharda.database import get_data_statistics; import json; print(json.dumps(get_data_statistics(), indent=2))"
 ```
 
 ## How the API Uses the Database
@@ -241,9 +241,8 @@ SELECT MIN(date), MAX(date) FROM panel_timeseries;
 ## Example Usage
 
 ```python
-from database import (
-    get_timeseries_data, 
-    get_soiling_data,
+from app.kharda.database import (
+    get_timeseries_data,
     get_data_statistics
 )
 

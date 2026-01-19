@@ -66,7 +66,7 @@ If you use VS Code:
 Create your own Python scripts to query the database:
 
 ```python
-from database import get_db_connection, get_timeseries_data
+from app.kharda.database import get_db_connection, get_timeseries_data
 
 # Get connection
 conn = get_db_connection()
@@ -139,13 +139,13 @@ C:\Users\Abhijit.Aher\Desktop\Kharda\backend\solar_farm_data.db
 ### Check if database exists:
 ```bash
 cd backend
-python -c "from pathlib import Path; from database import DB_PATH; print('Exists' if Path(DB_PATH).exists() else 'Not found'); print(DB_PATH)"
+python -c "from pathlib import Path; from app.kharda.database import DB_PATH; print('Exists' if Path(DB_PATH).exists() else 'Not found'); print(DB_PATH)"
 ```
 
 ### Get database size:
 ```bash
 cd backend
-python -c "from pathlib import Path; from database import DB_PATH; size = Path(DB_PATH).stat().st_size / (1024*1024); print(f'{size:.2f} MB')"
+python -c "from pathlib import Path; from app.kharda.database import DB_PATH; size = Path(DB_PATH).stat().st_size / (1024*1024); print(f'{size:.2f} MB')"
 ```
 
 ### View database statistics via API:
