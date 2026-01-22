@@ -1,10 +1,16 @@
 import React, { useMemo } from 'react'
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
 
-const DEFAULT_COMPARE_COLORS = Object.freeze({
-  panelA: '#38bdf8',
-  panelB: '#fbbf24'
-})
+const DEFAULT_COMPARE_COLORS = Object.freeze([
+  '#38bdf8',
+  '#fbbf24',
+  '#10b981',
+  '#f59e0b',
+  '#ef4444',
+  '#8b5cf6',
+  '#06b6d4',
+  '#84cc16'
+])
 
 const preferredMetadataLabels = {
   capacity: 'Capacity',
@@ -76,39 +82,47 @@ function capitalizeLabel(label) {
     .join(' ')
 }
 
-function buildMetadataRows(dataA, dataB, fallbackIdA, fallbackIdB) {
+function buildMetadataRows(panelData, panelIds) {
   const rows = []
 
+  // Panel IDs row
+  const panelIdValues = panelIds.map((id, index) => panelData[index]?.id || id || '—')
   rows.push({
     key: 'panelId',
     label: 'Panel ID',
-    valueA: dataA?.id || fallbackIdA || '—',
-    valueB: dataB?.id || fallbackIdB || '—'
+    values: panelIdValues
   })
 
+  // Panel Names row
+  const panelNameValues = panelIds.map((id, index) => {
+    const data = panelData[index]
+    return data?.name || (data?.id ? `Panel ${data.id}` : `Panel ${id}`) || '—'
+  })
   rows.push({
     key: 'panelName',
     label: 'Panel Name',
-    valueA: dataA?.name || (dataA?.id ? `Panel ${dataA.id}` : fallbackIdA ? `Panel ${fallbackIdA}` : '—'),
-    valueB: dataB?.name || (dataB?.id ? `Panel ${dataB.id}` : fallbackIdB ? `Panel ${fallbackIdB}` : '—')
+    values: panelNameValues
   })
 
+  // Location row
+  const locationValues = panelData.map(data => formatCoordinate(data?.location))
   rows.push({
     key: 'location',
     label: 'Centroid (lat, lng)',
-    valueA: formatCoordinate(dataA?.location),
-    valueB: formatCoordinate(dataB?.location)
+    values: locationValues
   })
 
+  // Other metadata
   Object.keys(preferredMetadataLabels).forEach((metaKey) => {
-    const valueA = dataA?.metadata?.[metaKey] ?? dataA?.properties?.[metaKey]
-    const valueB = dataB?.metadata?.[metaKey] ?? dataB?.properties?.[metaKey]
-    if (valueA !== undefined || valueB !== undefined) {
+    const values = panelData.map(data => {
+      const value = data?.metadata?.[metaKey] ?? data?.properties?.[metaKey]
+      return value !== undefined && value !== null && value !== '' ? String(value) : '—'
+    })
+    if (values.some(v => v !== '—')) {
       rows.push({
         key: metaKey,
         label: preferredMetadataLabels[metaKey] || capitalizeLabel(metaKey),
-        valueA: valueA !== undefined && valueA !== null && valueA !== '' ? String(valueA) : '—',
-        valueB: valueB !== undefined && valueB !== null && valueB !== '' ? String(valueB) : '—'
+        values
       })
     }
   })
@@ -203,11 +217,12 @@ function extractTimeseriesValue(entry) {
   return null
 }
 
-function mergeTimeseries(timeseriesA = [], timeseriesB = []) {
+function mergeTimeseries(panelTimeseries = []) {
   const merged = new Map()
 
-  const ingest = (series, targetKey) => {
-    series.forEach((entry) => {
+  panelTimeseries.forEach((timeseries, index) => {
+    const targetKey = `panel${index + 1}`
+    timeseries.forEach((entry) => {
       const dateLabel =
         normalizeDateLabel(entry?.date) ||
         normalizeDateLabel(entry?.timestamp) ||
@@ -222,17 +237,15 @@ function mergeTimeseries(timeseriesA = [], timeseriesB = []) {
         const existing = merged.get(dateLabel)
         existing[targetKey] = value
       } else {
-        merged.set(dateLabel, {
-          date: dateLabel,
-          panelA: targetKey === 'panelA' ? value : null,
-          panelB: targetKey === 'panelB' ? value : null
+        const newEntry = { date: dateLabel }
+        panelTimeseries.forEach((_, idx) => {
+          newEntry[`panel${idx + 1}`] = null
         })
+        newEntry[targetKey] = value
+        merged.set(dateLabel, newEntry)
       }
     })
-  }
-
-  ingest(timeseriesA, 'panelA')
-  ingest(timeseriesB, 'panelB')
+  })
 
   return Array.from(merged.values()).sort((a, b) => {
     const dateA = new Date(a.date)
@@ -244,277 +257,192 @@ function mergeTimeseries(timeseriesA = [], timeseriesB = []) {
   })
 }
 
-function buildMetricCharts(dataA, dataB) {
+function buildMetricCharts(panelData) {
   return metricConfigs.map((config) => {
-    const metricA = dataA?.metrics?.[config.key]
-    const metricB = dataB?.metrics?.[config.key]
+    const panelMetrics = panelData.map(data => data?.metrics?.[config.key])
+    const panelTimeseries = panelMetrics.map(metric => Array.isArray(metric?.timeseries) ? metric.timeseries : [])
+    const mergedSeries = mergeTimeseries(panelTimeseries)
 
-    const timeseriesA = Array.isArray(metricA?.timeseries) ? metricA.timeseries : []
-    const timeseriesB = Array.isArray(metricB?.timeseries) ? metricB.timeseries : []
-    const mergedSeries = mergeTimeseries(timeseriesA, timeseriesB)
-
-    const unit = metricA?.unit || metricB?.unit || config.fallbackUnit
-    const errorA = metricA?.error
-    const errorB = metricB?.error
+    const unit = panelMetrics.find(m => m?.unit)?.unit || config.fallbackUnit
+    const errors = panelMetrics.map(m => m?.error)
+    const currentValues = panelMetrics.map(metric =>
+      config.key === 'SOILING' ? formatNumber(metric?.current_si) : formatNumber(metric?.current_value, unit)
+    )
 
     let additionalNotes = null
     if (config.key === 'SOILING') {
-      additionalNotes = {
-        baselineA: formatNumber(metricA?.baseline_si),
-        baselineB: formatNumber(metricB?.baseline_si),
-        currentA: formatNumber(metricA?.current_si),
-        currentB: formatNumber(metricB?.current_si),
-        dropA: metricA?.soiling_drop_percent !== undefined ? formatPercent(metricA.soiling_drop_percent) : '—',
-        dropB: metricB?.soiling_drop_percent !== undefined ? formatPercent(metricB.soiling_drop_percent) : '—',
-        statusA: metricA?.status ? capitalizeLabel(metricA.status) : '—',
-        statusB: metricB?.status ? capitalizeLabel(metricB.status) : '—'
-      }
+      additionalNotes = panelData.map((data, index) => ({
+        baseline: formatNumber(data?.metrics?.[config.key]?.baseline_si),
+        current: formatNumber(data?.metrics?.[config.key]?.current_si),
+        drop: data?.metrics?.[config.key]?.soiling_drop_percent !== undefined ? formatPercent(data.metrics[config.key].soiling_drop_percent) : '—',
+        status: data?.metrics?.[config.key]?.status ? capitalizeLabel(data.metrics[config.key].status) : '—'
+      }))
     }
 
     return {
       key: config.key,
       label: config.label,
       unit,
-      currentA: config.key === 'SOILING' ? additionalNotes?.currentA : formatNumber(metricA?.current_value, unit),
-      currentB: config.key === 'SOILING' ? additionalNotes?.currentB : formatNumber(metricB?.current_value, unit),
-      errorA,
-      errorB,
+      currentValues,
+      errors,
       data: mergedSeries,
-      rawA: metricA,
-      rawB: metricB,
+      rawMetrics: panelMetrics,
       additionalNotes
     }
   })
 }
 
 function ComparePanel({ compareState, onFieldChange, onAnalyse, onExit, compareColors = DEFAULT_COMPARE_COLORS }) {
-  const { idA, idB, startDate, endDate, loading, error, dataA, dataB, fieldErrors, lastUpdated } = compareState
-  const panelLabelA = dataA?.id || idA || 'A'
-  const panelLabelB = dataB?.id || idB || 'B'
+  const { panelIds, startDate, endDate, loading, error, data, fieldErrors, lastUpdated } = compareState
 
-  const isAnalyseDisabled = loading || !idA.trim() || !idB.trim() || !startDate.trim() || !endDate.trim()
+  const panelData = data
 
-  const metadataRows = useMemo(() => buildMetadataRows(dataA, dataB, idA, idB), [dataA, dataB, idA, idB])
-  const metricCharts = useMemo(() => buildMetricCharts(dataA, dataB), [dataA, dataB])
+  const processedData = useMemo(() => {
+    if (!panelData.length) return { metadataRows: [], metricCharts: [] }
 
-  const showResults = Boolean((dataA || dataB) && !loading)
-  const showPlaceholder = !showResults && !loading && !error
-  const legendColorA = compareColors?.panelA || DEFAULT_COMPARE_COLORS.panelA
-  const legendColorB = compareColors?.panelB || DEFAULT_COMPARE_COLORS.panelB
-  const shouldShowLegend = Boolean(idA.trim() && idB.trim())
+    const metadataRows = buildMetadataRows(panelData, panelIds)
+    const metricCharts = buildMetricCharts(panelData)
 
-  const handleSubmit = (event) => {
-    event.preventDefault()
-    if (!loading) {
-      onAnalyse()
-    }
+    return { metadataRows, metricCharts }
+  }, [panelData, panelIds])
+
+  if (loading) {
+    return (
+      <div className="compare-panel">
+        <div className="loading">Loading panel data...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="compare-panel">
+        <div className="error">Error: {error}</div>
+        <button onClick={onExit}>Exit</button>
+      </div>
+    )
   }
 
   return (
-    <div className="compare-panel-container" role="region" aria-label="Compare panels">
+    <div className="compare-panel-container">
       <div className="compare-panel-header">
-        <h3 className="compare-title">Compare Panels</h3>
-        <button
-          type="button"
-          className="exit-compare-button"
-          onClick={onExit}
-          aria-label="Exit compare mode"
-        >
-          Exit Compare
-        </button>
+        <h2 className="compare-title">Compare Panels</h2>
+        <button className="exit-compare-button" onClick={onExit}>Exit</button>
       </div>
 
-      {shouldShowLegend && (
-        <div className="compare-map-legend" role="note" aria-label="Map comparison legend">
-          <div className="legend-item">
-            <span className="legend-swatch" style={{ backgroundColor: legendColorA }} aria-hidden="true" />
-            <span className="legend-label">Panel {panelLabelA}</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-swatch" style={{ backgroundColor: legendColorB }} aria-hidden="true" />
-            <span className="legend-label">Panel {panelLabelB}</span>
-          </div>
-        </div>
-      )}
-
-      <form className="compare-form" onSubmit={handleSubmit}>
-        <div className={`compare-field ${fieldErrors?.idA ? 'has-error' : ''}`}>
-          <label htmlFor="compare-panel-id-a">Panel ID A</label>
+      <div className="compare-form">
+        <div className="panel-ids">
+          <label>Panel IDs (comma-separated):</label>
           <input
-            id="compare-panel-id-a"
             type="text"
-            value={idA}
-            onChange={(e) => onFieldChange('idA', e.target.value)}
-            aria-label="Panel ID A"
-            placeholder="e.g. 101"
-            disabled={loading}
-            autoComplete="off"
+            value={panelIds.join(', ')}
+            onChange={(e) => {
+              const ids = e.target.value.split(',').map(id => id.trim()).filter(id => id)
+              onFieldChange('panelIds', ids)
+            }}
+            placeholder="Enter panel IDs, e.g., 1, 2, 3"
           />
-          {fieldErrors?.idA && <span className="field-error" role="alert">{fieldErrors.idA}</span>}
         </div>
-
-        <div className={`compare-field ${fieldErrors?.idB ? 'has-error' : ''}`}>
-          <label htmlFor="compare-panel-id-b">Panel ID B</label>
+        <div className="date-range">
+          <label>Start Date:</label>
           <input
-            id="compare-panel-id-b"
-            type="text"
-            value={idB}
-            onChange={(e) => onFieldChange('idB', e.target.value)}
-            aria-label="Panel ID B"
-            placeholder="e.g. 205"
-            disabled={loading}
-            autoComplete="off"
-          />
-          {fieldErrors?.idB && <span className="field-error" role="alert">{fieldErrors.idB}</span>}
-        </div>
-
-        <div className={`compare-field ${fieldErrors?.startDate ? 'has-error' : ''}`}>
-          <label htmlFor="compare-start-date">Start Date</label>
-          <input
-            id="compare-start-date"
             type="date"
             value={startDate}
             onChange={(e) => onFieldChange('startDate', e.target.value)}
-            aria-label="Start date"
-            disabled={loading}
           />
-          {fieldErrors?.startDate && <span className="field-error" role="alert">{fieldErrors.startDate}</span>}
-        </div>
-
-        <div className={`compare-field ${fieldErrors?.endDate ? 'has-error' : ''}`}>
-          <label htmlFor="compare-end-date">End Date</label>
+          <label>End Date:</label>
           <input
-            id="compare-end-date"
             type="date"
             value={endDate}
             onChange={(e) => onFieldChange('endDate', e.target.value)}
-            aria-label="End date"
-            disabled={loading}
           />
-          {fieldErrors?.endDate && <span className="field-error" role="alert">{fieldErrors.endDate}</span>}
         </div>
+        <button onClick={onAnalyse} disabled={loading}>
+          {loading ? 'Analyzing...' : 'Analyze'}
+        </button>
+      </div>
 
-        <div className="compare-actions">
-          <button
-            type="submit"
-            className="analyse-button"
-            disabled={isAnalyseDisabled}
-            aria-label="Analyse selected panels"
-          >
-            {loading ? 'Analysing…' : 'Analyse'}
-          </button>
-        </div>
-      </form>
-
-      {error && !loading && (
-        <div className="compare-error" role="alert">{error}</div>
-      )}
-
-      {loading && (
-        <div className="compare-loading" aria-live="polite">Fetching latest panel data…</div>
-      )}
-
-      {showPlaceholder && (
-        <div className="compare-placeholder">
-          Enter two panel IDs and a date range to compare their performance metrics. You can adjust the range to analyse seasonal changes or recent behaviour.
+      {fieldErrors && Object.keys(fieldErrors).length > 0 && (
+        <div className="field-errors">
+          {Object.entries(fieldErrors).map(([field, error]) => (
+            <div key={field} className="field-error">
+              {field}: {error}
+            </div>
+          ))}
         </div>
       )}
 
-      {showResults && (
-        <div className="compare-results">
-          {lastUpdated && (
-            <div className="compare-updated">Last updated: {new Date(lastUpdated).toLocaleString()}</div>
-          )}
-
-          <div className="compare-metadata">
-            {metadataRows.map((row) => (
-              <div className="compare-metadata-row" key={`meta-${row.key}`}>
-                <div className="compare-metadata-label">{row.label}</div>
-                <div className="compare-metadata-value">{row.valueA}</div>
-                <div className="compare-metadata-value">{row.valueB}</div>
-              </div>
-            ))}
+      {panelData.length > 0 && (
+        <div className="compare-content">
+          <div className="metadata-section">
+            <h3>Panel Metadata</h3>
+            <table className="metadata-table">
+              <tbody>
+                {processedData.metadataRows.map((row) => (
+                  <tr key={row.key}>
+                    <td className="label-cell">{row.label}</td>
+                    {row.values.map((value, index) => (
+                      <td key={index} className="value-cell" style={{ color: compareColors[index % compareColors.length] }}>
+                        {value}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
-          <div className="compare-charts">
-            {metricCharts.map((chart) => (
-              <div className="compare-chart-card" key={chart.key}>
-                <div className="compare-chart-header">
-                  <div className="compare-chart-title">
-                    <h4>{chart.label}</h4>
-                    {chart.unit && <span className="compare-chart-unit">Unit: {chart.unit}</span>}
-                  </div>
-                  <div className="compare-chart-current">
-                    <div>Panel {panelLabelA}: <strong>{chart.currentA}</strong></div>
-                    <div>Panel {panelLabelB}: <strong>{chart.currentB}</strong></div>
-                  </div>
+          <div className="metrics-section">
+            <h3>Metrics Comparison</h3>
+            {processedData.metricCharts.map((chart) => (
+              <div key={chart.key} className="metric-chart">
+                <h4>{chart.label}</h4>
+                <div className="current-values">
+                  {chart.currentValues.map((value, index) => (
+                    <div key={index} className="current-value" style={{ color: compareColors[index % compareColors.length] }}>
+                      Panel {index + 1}: {value}
+                    </div>
+                  ))}
                 </div>
-
-                {(chart.errorA || chart.errorB) && (
-                  <div className="compare-chart-error" role="alert">
-                    {chart.errorA && <div>Panel {panelLabelA}: {chart.errorA}</div>}
-                    {chart.errorB && <div>Panel {panelLabelB}: {chart.errorB}</div>}
-                  </div>
+                {chart.data.length > 0 && (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={chart.data}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      {panelIds.map((_, index) => (
+                        <Line
+                          key={index}
+                          type="monotone"
+                          dataKey={`panel${index + 1}`}
+                          stroke={compareColors[index % compareColors.length]}
+                          name={`Panel ${index + 1}`}
+                          connectNulls={false}
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
                 )}
-
-                {chart.key === 'SOILING' && chart.additionalNotes && (
-                  <div className="compare-soiling-summary">
-                    <div>
-                      <span>Baseline:</span>
-                      <strong>{chart.additionalNotes.baselineA}</strong> vs <strong>{chart.additionalNotes.baselineB}</strong>
-                    </div>
-                    <div>
-                      <span>Current:</span>
-                      <strong>{chart.additionalNotes.currentA}</strong> vs <strong>{chart.additionalNotes.currentB}</strong>
-                    </div>
-                    <div>
-                      <span>Drop %:</span>
-                      <strong>{chart.additionalNotes.dropA}</strong> vs <strong>{chart.additionalNotes.dropB}</strong>
-                    </div>
-                    <div>
-                      <span>Status:</span>
-                      <strong>{chart.additionalNotes.statusA}</strong> vs <strong>{chart.additionalNotes.statusB}</strong>
-                    </div>
-                  </div>
-                )}
-
-                {chart.data.length > 0 ? (
-                  <div className="compare-chart-body">
-                    <ResponsiveContainer width="100%" height={260}>
-                      <LineChart data={chart.data} margin={{ top: 10, right: 20, left: 0, bottom: 30 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.2)" />
-                        <XAxis
-                          dataKey="date"
-                          stroke="#e5e7eb"
-                          tick={{ fill: '#e5e7eb', fontSize: 12 }}
-                          angle={-40}
-                          height={60}
-                          textAnchor="end"
-                        />
-                        <YAxis
-                          stroke="#e5e7eb"
-                          tick={{ fill: '#e5e7eb', fontSize: 12 }}
-                          allowDecimals
-                        />
-                        <Tooltip
-                          formatter={(value) => (typeof value === 'number' ? value.toFixed(2) : value)}
-                          labelFormatter={(label) => `Date: ${label}`}
-                          contentStyle={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' }}
-                        />
-                        <Legend verticalAlign="top" height={30} wrapperStyle={{ color: '#e5e7eb' }} />
-                        <Line type="monotone" dataKey="panelA" name={`Panel ${panelLabelA}`} stroke={legendColorA} strokeWidth={2} dot={false} connectNulls />
-                        <Line type="monotone" dataKey="panelB" name={`Panel ${panelLabelB}`} stroke={legendColorB} strokeWidth={2} dot={false} connectNulls />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className="compare-chart-empty">
-                    No trend data available for this parameter in the selected date range.
+                {chart.additionalNotes && (
+                  <div className="additional-notes">
+                    {chart.additionalNotes.map((note, index) => (
+                      <div key={index} className="note" style={{ color: compareColors[index % compareColors.length] }}>
+                        Panel {index + 1}: Baseline: {note.baseline}, Current: {note.current}, Drop: {note.drop}, Status: {note.status}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {lastUpdated && (
+        <div className="last-updated">
+          Last updated: {new Date(lastUpdated).toLocaleString()}
         </div>
       )}
     </div>

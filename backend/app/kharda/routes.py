@@ -68,7 +68,7 @@ BUCKET_LABELS = [
 ]
 
 class PanelQuery(BaseModel):
-    panel_id: int
+    panel_ids: List[int]
     parameter: str  # "LST", "SWIR", "SOILING", "NDVI", "NDWI", "VISIBLE"
     start_date: str
     end_date: str
@@ -93,114 +93,124 @@ async def get_panel_data(query: PanelQuery):
 
     print(
         f"[INFO] /api/panel-data request "
-        f"panel_id={query.panel_id} "
+        f"panel_ids={query.panel_ids} "
         f"parameter={parameter} "
         f"start={start_date} end={end_date}"
     )
 
-    # ===================== SOILING =====================
-    if parameter == "SOILING":
-        record = None
-        try:
-            record = get_latest_soiling_record(query.panel_id)
-        except Exception as e:
-            print(f"[ERROR] Error fetching soiling record from database: {e}")
+    results = []
+    for panel_id in query.panel_ids:
+        panel_result = {}
 
-        if record:
-            return {
-                "parameter": "SOILING",
-                **record,
-                "source": "database"
-            }
+        if parameter == "SOILING":
+            record = None
+            try:
+                record = get_latest_soiling_record(panel_id)
+            except Exception as e:
+                print(f"[ERROR] Error fetching soiling record from database for panel {panel_id}: {e}")
 
-        gee_result = None
+            if record:
+                panel_result.update({
+                    "parameter": "SOILING",
+                    **record,
+                    "source": "database"
+                })
+            else:
+                gee_result = None
 
-        try:
-            with open(POLYGONS_PATH_STR, "r") as f:
-                geojson = json.load(f)
+                try:
+                    with open(POLYGONS_PATH_STR, "r") as f:
+                        geojson = json.load(f)
 
-            feature = next(
-                f for f in geojson["features"]
-                if f["properties"]["panel_id"] == query.panel_id
-            )
+                    feature = next(
+                        f for f in geojson["features"]
+                        if f["properties"]["panel_id"] == panel_id
+                    )
 
-            geometry = ee.Geometry(feature["geometry"])
+                    geometry = ee.Geometry(feature["geometry"])
 
-            gee_result = await calculate_soiling_data(
-                geometry,
-                start_date,
-                end_date
-            )
+                    gee_result = await calculate_soiling_data(
+                        geometry,
+                        start_date,
+                        end_date
+                    )
 
-        except Exception as e:
-            print(f"[ERROR] Soiling calculation via GEE failed: {e}")
+                except Exception as e:
+                    print(f"[ERROR] Soiling calculation via GEE failed for panel {panel_id}: {e}")
 
-        if gee_result:
-            return {
-                "parameter": "SOILING",
-                **gee_result,
-                "source": "gee"
-            }
+                if gee_result:
+                    panel_result.update({
+                        "parameter": "SOILING",
+                        **gee_result,
+                        "source": "gee"
+                    })
+                else:
+                    panel_result.update({
+                        "parameter": "SOILING",
+                        "baseline_si": 1.0,
+                        "current_si": 1.0,
+                        "soiling_drop_percent": 0.0,
+                        "unit": PANEL_PARAMETER_CONFIG["SOILING"]["unit"],
+                        "status": "no_data",
+                        "source": "fallback"
+                    })
 
-        return {
-            "parameter": "SOILING",
-            "baseline_si": 1.0,
-            "current_si": 1.0,
-            "soiling_drop_percent": 0.0,
-            "unit": PANEL_PARAMETER_CONFIG["SOILING"]["unit"],
-            "status": "no_data",
-            "source": "fallback"
-        }
+        # ===================== OTHER PARAMETERS =====================
+        else:
+            try:
+                timeseries = get_timeseries_data(
+                    panel_id,
+                    parameter,
+                    start_date,
+                    end_date
+                )
+            except Exception as e:
+                print(f"[ERROR] Error fetching timeseries data from database for panel {panel_id}: {e}")
+                panel_result.update({
+                    "error": "Error fetching panel data"
+                })
+                results.append(panel_result)
+                continue
 
-    # ===================== OTHER PARAMETERS =====================
-    try:
-        timeseries = get_timeseries_data(
-            query.panel_id,
-            parameter,
-            start_date,
-            end_date
-        )
-    except Exception as e:
-        print(f"[ERROR] Error fetching timeseries data from database: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Error fetching panel data"
-        )
+            if not timeseries:
+                panel_result.update({
+                    "error": "No data found for requested range"
+                })
+                results.append(panel_result)
+                continue
 
-    if not timeseries:
-        raise HTTPException(
-            status_code=404,
-            detail="No data found for requested range"
-        )
+            config = PANEL_PARAMETER_CONFIG.get(parameter, {})
+            precision = config.get("precision", 2)
+            unit = timeseries[0]["unit"]
 
-    config = PANEL_PARAMETER_CONFIG.get(parameter, {})
-    precision = config.get("precision", 2)
-    unit = timeseries[0]["unit"]
+            try:
+                current_value = round(float(timeseries[-1]["value"]), precision)
+            except Exception:
+                current_value = None
 
-    try:
-        current_value = round(float(timeseries[-1]["value"]), precision)
-    except Exception:
-        current_value = None
+            rounded_series = []
+            for entry in timeseries:
+                try:
+                    value = round(float(entry["value"]), precision)
+                except Exception:
+                    value = None
 
-    rounded_series = []
-    for entry in timeseries:
-        try:
-            value = round(float(entry["value"]), precision)
-        except Exception:
-            value = None
+                rounded_series.append({
+                    "date": entry["date"],
+                    "value": value,
+                    "unit": entry["unit"]
+                })
 
-        rounded_series.append({
-            "date": entry["date"],
-            "value": value,
-            "unit": entry["unit"]
-        })
+            panel_result.update({
+                "parameter": parameter,
+                "current_value": current_value,
+                "unit": unit,
+                "timeseries": rounded_series,
+            })
 
-    return {
-        "parameter": parameter,
-        "current_value": current_value,
-        "unit": unit,
-        "timeseries": rounded_series,
-    }
+        results.append(panel_result)
+
+    return {"results": results}
 
 
 def ensure_snapshot_cache_dir():

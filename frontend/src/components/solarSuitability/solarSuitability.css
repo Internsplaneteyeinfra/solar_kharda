@@ -3,9 +3,12 @@
 /* Scoped styles for Solar Suitability - all prefixed with ss- */
 .ss-container {
   font-family: 'Inter', sans-serif;
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: var(--color-panel-bg);;
+  color: #dbdde1;
  
+}
+.element.style{
+  color: #e2e6eb;
 }
 
 .ss-container .loader,
@@ -38,7 +41,7 @@
 
 .ss-container .custom-popup .leaflet-popup-tip,
 .ss-container .ss-custom-popup .leaflet-popup-tip {
-  background: white;
+  background: rgba(109, 69, 69, 0.244);
   border: none;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
