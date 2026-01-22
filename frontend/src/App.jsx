@@ -1,9 +1,10 @@
 import { Routes, Route, useNavigate } from "react-router-dom";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { MapContainer, TileLayer, GeoJSON, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, GeoJSON, useMapEvents, ZoomControl } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import axios from 'axios'
 import ControlPanel from './components/ControlPanel'
+import MapViewToggle from './components/MapViewToggle'
 import DataPanel from './components/DataPanel'
 import Login from './components/Login'
 import WeatherBanner from './components/WeatherBanner'
@@ -14,8 +15,6 @@ import './App.css'
 import SolarSuitability from "./components/SolarSuitability"
 
 import ThreeCards from "./components/ThreeCards" //cards page
-
-import SolarAnalyzer from "./components/SolarAnalyzer"
 
 const API_BASE = 'http://localhost:8000' // Adjust as needed
 const PARAMETER_OPTIONS = Object.freeze([
@@ -32,14 +31,12 @@ const COMPARE_PANEL_COLORS = Object.freeze({
 })
 
 const defaultCompareState = {
-  idA: '',
-  idB: '',
+  panelIds: [],
   startDate: '',
   endDate: '',
   loading: false,
   error: null,
-  dataA: null,
-  dataB: null,
+  data: [],
   lastUpdated: null,
   fieldErrors: {}
 }
@@ -97,7 +94,7 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
   const [startDate, setStartDate] = useState(monthBefore(todayStr))
   const [mapCenter, setMapCenter] = useState([18.671, 75.521])
   const [mapZoom, setMapZoom] = useState(16)
-  const [mapView, setMapView] = useState('map')
+  const [mapView, setMapView] = useState('satellite')
   const [showPolygons, setShowPolygons] = useState(true)
   const [panelLstData, setPanelLstData] = useState({})
   const [analyzeLoading, setAnalyzeLoading] = useState(false)
@@ -112,9 +109,11 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
       if (value === undefined || value === null) return ''
       return String(value).trim().toLowerCase()
     }
+    const panelIds = compareState?.panelIds || []
     return {
-      panelA: normalize(compareState?.dataA?.id ?? compareState?.idA),
-      panelB: normalize(compareState?.dataB?.id ?? compareState?.idB)
+      panelA: panelIds.length > 0 ? normalize(panelIds[0]) : '',
+      panelB: panelIds.length > 1 ? normalize(panelIds[1]) : '',
+      all: panelIds.map(id => normalize(id))
     }
   }, [compareState])
 
@@ -159,8 +158,7 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
     setCompareMode(true)
     setCompareState(() => ({
       ...defaultCompareState,
-      idA: selectedPanel ? String(selectedPanel) : '',
-      idB: '',
+      panelIds: selectedPanel ? [String(selectedPanel)] : [],
       startDate,
       endDate
     }))
@@ -272,7 +270,7 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
     setCompareState((prev) => ({
       ...prev,
       [field]: value,
-      error: field === 'idA' || field === 'idB' || field === 'startDate' || field === 'endDate' ? null : prev.error,
+      error: field === 'panelIds' || field === 'startDate' || field === 'endDate' ? null : prev.error,
       fieldErrors: {
         ...(prev.fieldErrors || {}),
         [field]: ''
@@ -281,18 +279,14 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
   }
 
   const handleCompareAnalyse = async () => {
-    const trimmedIdA = (compareState.idA || '').trim()
-    const trimmedIdB = (compareState.idB || '').trim()
+    const panelIds = compareState.panelIds || []
     const compareStart = (compareState.startDate || '').trim()
     const compareEnd = (compareState.endDate || '').trim()
 
     const newFieldErrors = {}
 
-    if (!trimmedIdA) {
-      newFieldErrors.idA = 'Panel ID A is required.'
-    }
-    if (!trimmedIdB) {
-      newFieldErrors.idB = 'Panel ID B is required.'
+    if (panelIds.length === 0) {
+      newFieldErrors.panelIds = 'At least one panel must be selected.'
     }
 
     if (!compareStart) {
@@ -334,8 +328,6 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
     if (Object.keys(newFieldErrors).length > 0) {
       setCompareState((prev) => ({
         ...prev,
-        idA: trimmedIdA,
-        idB: trimmedIdB,
         startDate: compareStart,
         endDate: compareEnd,
         fieldErrors: {
@@ -350,8 +342,6 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
     if (!polygons || !Array.isArray(polygons.features) || polygons.features.length === 0) {
       setCompareState((prev) => ({
         ...prev,
-        idA: trimmedIdA,
-        idB: trimmedIdB,
         startDate: compareStart,
         endDate: compareEnd,
         fieldErrors: {},
@@ -362,8 +352,6 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
 
     setCompareState((prev) => ({
       ...prev,
-      idA: trimmedIdA,
-      idB: trimmedIdB,
       startDate: compareStart,
       endDate: compareEnd,
       loading: true,
@@ -372,41 +360,34 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
     }))
 
     try {
-      const [panelAResult, panelBResult] = await Promise.allSettled([
-        getPanelById(trimmedIdA, { apiBase: API_BASE, startDate: compareStart, endDate: compareEnd, polygons }),
-        getPanelById(trimmedIdB, { apiBase: API_BASE, startDate: compareStart, endDate: compareEnd, polygons })
-      ])
+      const panelPromises = panelIds.map(panelId =>
+        getPanelById(panelId, { apiBase: API_BASE, startDate: compareStart, endDate: compareEnd, polygons })
+      )
+
+      const results = await Promise.allSettled(panelPromises)
 
       const nextState = {
-        idA: trimmedIdA,
-        idB: trimmedIdB,
+        panelIds,
         startDate: compareStart,
         endDate: compareEnd,
         loading: false,
-        dataA: null,
-        dataB: null,
+        data: [],
         error: null,
         fieldErrors: {},
         lastUpdated: null
       }
 
-      if (panelAResult.status === 'fulfilled') {
-        nextState.dataA = panelAResult.value
-      } else {
-        const message = panelAResult.reason?.message || 'Unable to fetch data for Panel A.'
-        nextState.fieldErrors.idA = message
-        nextState.error = message
-      }
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          nextState.data[index] = result.value
+        } else {
+          const message = result.reason?.message || `Unable to fetch data for Panel ${panelIds[index]}.`
+          nextState.fieldErrors[`panel${index}`] = message
+          nextState.error = nextState.error ? `${nextState.error} | ${message}` : message
+        }
+      })
 
-      if (panelBResult.status === 'fulfilled') {
-        nextState.dataB = panelBResult.value
-      } else {
-        const message = panelBResult.reason?.message || 'Unable to fetch data for Panel B.'
-        nextState.fieldErrors.idB = message
-        nextState.error = nextState.error ? `${nextState.error} | ${message}` : message
-      }
-
-      if (nextState.dataA || nextState.dataB) {
+      if (nextState.data.some(d => d)) {
         nextState.lastUpdated = new Date().toISOString()
       }
 
@@ -583,7 +564,23 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
 
   const handlePanelClick = (e, feature) => {
     const panelId = feature?.properties?.panel_id ?? feature
-    
+
+    if (compareMode) {
+      const panelIdStr = String(panelId)
+      setCompareState(prev => {
+        const currentIds = prev.panelIds || []
+        const isSelected = currentIds.includes(panelIdStr)
+        if (isSelected) {
+          // Remove the panel
+          return { ...prev, panelIds: currentIds.filter(id => id !== panelIdStr) }
+        } else {
+          // Add the panel
+          return { ...prev, panelIds: [...currentIds, panelIdStr] }
+        }
+      })
+      return
+    }
+
     // Check if this panel is already in a pane
     const existingPaneIndex = panes.findIndex(pane => pane.id === panelId)
     
@@ -916,10 +913,9 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
     }
     const isSelected = selectedPanel === panelId
     const normalizedPanelId = panelIdStr.trim().toLowerCase()
-    const isCompareA = compareMode && compareIdA && normalizedPanelId === compareIdA
-    const isCompareB = compareMode && compareIdB && normalizedPanelId === compareIdB
+    const isCompareSelected = compareMode && compareIds.all && compareIds.all.includes(normalizedPanelId)
     const lstSelected = selectedParameters.includes('LST')
-    
+
     // If LST parameter is selected and we have LST data, color by LST value
     let fillColor = '#64b4be'
     if (lstSelected && panelLstData && panelLstData[panelIdStr] !== undefined && panelLstData[panelIdStr] !== null && panelLstData[panelIdStr] !== '') {
@@ -927,20 +923,11 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
       fillColor = getLstColor(lstValue)
     }
 
-    if (isCompareA) {
+    if (isCompareSelected) {
       return {
-        color: COMPARE_PANEL_COLORS.panelA,
+        color: '#38bdf8',
         weight: 3,
-        fillColor: COMPARE_PANEL_COLORS.panelA,
-        fillOpacity: 0.45
-      }
-    }
-
-    if (isCompareB) {
-      return {
-        color: COMPARE_PANEL_COLORS.panelB,
-        weight: 3,
-        fillColor: COMPARE_PANEL_COLORS.panelB,
+        fillColor: '#38bdf8',
         fillOpacity: 0.45
       }
     }
@@ -953,7 +940,7 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
         fillOpacity: 0.12
       }
     }
-    
+
     if (isSelected) {
       return {
         color: '#ffff00',
@@ -962,14 +949,14 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
         fillOpacity: 0.7
       }
     }
-    
+
     return {
       color: fillColor,
       weight: lstSelected ? 2 : 1,
       fillColor: fillColor,
       fillOpacity: lstSelected ? 0.6 : 0.3
     }
-  }, [selectedParameters, selectedPanel, panelLstData, compareMode, compareIdA, compareIdB, filterMode, filterMatchedIds])
+  }, [selectedParameters, selectedPanel, panelLstData, compareMode, compareIds, filterMode, filterMatchedIds])
 
   const onEachFeature = (feature, layer) => {
     layer.on({
@@ -992,41 +979,57 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
 
   const isAltMode = compareMode || filterMode
   const appContainerClass = isAltMode ? 'app-container compare-mode' : 'app-container'
-  const mainContentClass = isAltMode ? 'main-content compare-active' : 'main-content with-panels'
-
 
   return (
     <>
       <WeatherBanner />
       <div className={appContainerClass}>
+        {/* Floating Date Picker (Top Center) */}
         {!compareMode && !filterMode && (
-          <ControlPanel
-            selectedParameters={selectedParameters}
-            onToggleParameter={handleToggleParameter}
-            parameterOptions={PARAMETER_OPTIONS}
-            startDate={startDate}
-            setStartDate={setStartDate}
-            endDate={endDate}
-            setEndDate={setEndDate}
-            mapView={mapView}
-            setMapView={setMapView}
-            showPolygons={showPolygons}
-            setShowPolygons={setShowPolygons}
-            onLogout={handleLogout}
-            onAnalyze={handleAnalyze}
-            analyzeLoading={analyzeLoading}
-            onEnterCompare={handleEnterCompare}
-            onEnterFilter={handleEnterFilterMode}
-          />
+          <div className="floating-date-picker">
+            <div className="date-group">
+              <label>Start</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="date-separator">to</div>
+            <div className="date-group">
+              <label>End</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+          </div>
         )}
 
-        <div className={mainContentClass}>
-          <div className="map-container">
+        {/* Fixed Logout Button */}
+        <button 
+          className="fixed-logout-btn" 
+          onClick={handleLogout}
+          aria-label="Logout"
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+        </button>
+
+        {/* Full Screen Map as Base Layer */}
+        <div className="map-layer">
             <MapContainer
               center={mapCenter}
               zoom={mapZoom}
               style={{ height: '100%', width: '100%' }}
+              zoomControl={false}
             >
+              <ZoomControl position="bottomright" />
+              <MapViewToggle mapView={mapView} setMapView={setMapView} />
               {mapView === 'satellite' ? (
                 <TileLayer
                   key="satellite"
@@ -1042,7 +1045,7 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
               )}
               {polygons && showPolygons && (
                 <GeoJSON
-                  key={`lst-${selectedParameters.slice().sort().join('-')}-${Object.keys(panelLstData || {}).length}-${analyzeLoading ? 'loading' : 'ready'}`}
+                  key={`lst-${selectedParameters.slice().sort().join('-')}-${Object.keys(panelLstData || {}).length}-${analyzeLoading ? 'loading' : 'ready'}-${compareMode ? 'compare' : 'normal'}`}
                   data={polygons}
                   style={getStyle}
                   onEachFeature={onEachFeature}
@@ -1050,9 +1053,33 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
               )}
               <MapClickHandler onPanelClick={handlePanelClick} selectedPanel={selectedPanel} />
             </MapContainer>
-          </div>
+        </div>
 
-          {compareMode ? (
+        {/* Floating Control Panel */}
+        {!compareMode && !filterMode && (
+          <div className="control-panel-container">
+            <ControlPanel
+              selectedParameters={selectedParameters}
+              onToggleParameter={handleToggleParameter}
+              parameterOptions={PARAMETER_OPTIONS}
+              startDate={startDate}
+              setStartDate={setStartDate}
+              endDate={endDate}
+              setEndDate={setEndDate}
+             
+              showPolygons={showPolygons}
+              setShowPolygons={setShowPolygons}
+              onLogout={handleLogout}
+              onAnalyze={handleAnalyze}
+              analyzeLoading={analyzeLoading}
+              onEnterCompare={handleEnterCompare}
+              onEnterFilter={handleEnterFilterMode}
+            />
+          </div>
+        )}
+
+        {/* Sliding Side Panels */}
+        {compareMode ? (
             <ComparePanel
               compareState={compareState}
               onFieldChange={handleCompareFieldChange}
@@ -1060,7 +1087,7 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
               onExit={handleExitCompare}
               compareColors={COMPARE_PANEL_COLORS}
             />
-          ) : filterMode ? (
+        ) : filterMode ? (
             <FilterPanel
               apiBase={API_BASE}
               parameterOptions={PARAMETER_OPTIONS}
@@ -1073,43 +1100,27 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
               onUpdateMatchingPanels={handleFilterMatchesUpdate}
               onSelectPanel={(panelId) => setSelectedPanel(panelId)}
             />
-          ) : (
-            <div className="panels-container">
-              <div className="panels-header">
-                <span className="panels-count">{panes.length} {panes.length === 1 ? 'Pane' : 'Panes'}</span>
-              </div>
-              <div className="panes-list" id="panes-list" role="list">
-                {panes.length === 0 ? (
-                  <div className="empty-panes-message">
-                    <p>SELECT A SOLAR PANEL FOR ANALYSIS</p>
-                  </div>
-                ) : (
-                  panes.map((pane, idx) => {
-                    const panelId = pane.id
-                    const isActive = activePaneIndex === idx
-                    return (
-                      <DataPanel
-                        key={`pane-${idx}`}
-                        id={`pane-${idx}`}
-                        paneIndex={idx}
-                        panelId={panelId}
-                        dataByParameter={panelDataMap[panelId] || {}}
-                        loading={Boolean(loadingMap[panelId])}
-                        selectedParameters={selectedParameters}
-                        mapPanelValue={selectedParameters.includes('LST') ? panelLstData[String(panelId)] : undefined}
-                        onNavigateHistory={(dir) => handleNavigatePanelHistory(dir, idx)}
-                        onClose={() => handleClosePanel(idx)}
-                        onPaneClick={() => handlePaneClick(idx)}
-                        isActive={isActive}
-                        panelName={`Panel ${panelId}`}
-                      />
-                    )
-                  })
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+        ) : activePaneIndex !== null && panes[activePaneIndex] ? (
+          <div className="floating-data-panel-wrapper">
+            <DataPanel
+              key={`pane-${activePaneIndex}`}
+              id={`pane-${activePaneIndex}`}
+              paneIndex={activePaneIndex}
+              panelId={panes[activePaneIndex].id}
+              dataByParameter={panelDataMap[panes[activePaneIndex].id] || {}}
+              loading={Boolean(loadingMap[panes[activePaneIndex].id])}
+              selectedParameters={selectedParameters}
+              mapPanelValue={selectedParameters.includes('LST') ? panelLstData[String(panes[activePaneIndex].id)] : undefined}
+              onNavigateHistory={(dir) => handleNavigatePanelHistory(dir, activePaneIndex)}
+              onClose={() => handleClosePanel(activePaneIndex)}
+              onPaneClick={() => handlePaneClick(activePaneIndex)}
+              isActive={true}
+              panelName={`Panel ${panes[activePaneIndex].id}`}
+              hasAnalyzed={analyzeTick > 0}
+              analyzeTick={analyzeTick}
+            />
+          </div>
+        ) : null}
       </div>
     </>
   )

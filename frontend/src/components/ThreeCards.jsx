@@ -27,8 +27,6 @@ const ThreeCards = () => {
       <source src={bgvideo} type="video/mp4" />
     </video>
      
-    <div className={`cards-container ${videoReady ? 'show' : 'hide'}`}></div>
-
     {/* Hover image overlay (only when hovering) */}
     {hoverBg && (
       <div
@@ -40,7 +38,7 @@ const ThreeCards = () => {
     {/* Page Content */}
     <h2>Welcome to Solar Analytics</h2>
 
-    <div className="cards-container">
+    <div className={`cards-container ${videoReady ? 'show' : 'hide'}`}>
       <div
         className="card"
         onMouseEnter={() => setHoverBg(suitability)}

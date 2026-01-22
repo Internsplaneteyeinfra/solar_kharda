@@ -24,6 +24,7 @@
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
     "@vitejs/plugin-react": "^4.2.0",
+    "baseline-browser-mapping": "^2.9.17",
     "vite": "^5.0.2"
   }
 }

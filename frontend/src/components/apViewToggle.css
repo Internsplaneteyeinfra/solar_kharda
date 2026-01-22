@@ -1,0 +1,37 @@
+.map-view-toggle {
+  position: absolute;
+  top: 990px;              /* adjust vertically */
+  right: 20px;            /* beside control panel */
+  z-index: 1000;
+
+  display: flex;
+  gap: 6px;
+
+  background: rgba(0, 0, 0, 0.55);
+  padding: 6px;
+  border-radius: 10px;
+  backdrop-filter: blur(6px);
+}
+
+.map-view-toggle button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+
+  transition: all 0.2s ease;
+}
+
+.map-view-toggle button:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.map-view-toggle button.active {
+  background: #38bdf8;
+  color: #000;
+}
