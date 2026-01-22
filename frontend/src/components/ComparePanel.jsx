@@ -34,12 +34,12 @@ const preferredMetadataLabels = {
 }
 
 const metricConfigs = [
-  { key: 'LST', label: 'Land Surface Temperature', fallbackUnit: '°C' },
-  { key: 'SWIR', label: 'Shortwave Infrared', fallbackUnit: '' },
-  { key: 'SOILING', label: 'Soiling Index', fallbackUnit: '' },
-  { key: 'NDVI', label: 'Normalized Difference Vegetation Index', fallbackUnit: '' },
-  { key: 'NDWI', label: 'Normalized Difference Water Index', fallbackUnit: '' },
-  { key: 'VISIBLE', label: 'Visible Reflectance', fallbackUnit: '' }
+  { key: 'LST', label: 'Panel Temperature', fallbackUnit: '°C' },
+  { key: 'SWIR', label: 'Reflectance', fallbackUnit: '' },
+  { key: 'SOILING', label: 'Soiling Dust Index', fallbackUnit: '' },
+  { key: 'NDVI', label: 'Vegetation Index', fallbackUnit: '' },
+  { key: 'NDWI', label: 'Surface Water', fallbackUnit: '' },
+  { key: 'VISIBLE', label: 'Visible Brightness', fallbackUnit: '' }
 ]
 
 function formatNumber(value, unit = '') {

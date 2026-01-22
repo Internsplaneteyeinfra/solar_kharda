@@ -23,7 +23,8 @@ const PARAMETER_OPTIONS = Object.freeze([
   { value: 'SOILING', label: 'Soiling Dust Index' },
   { value: 'NDVI', label: 'Vegetation Index' },
   { value: 'NDWI', label: 'Surface Water' },
-  { value: 'VISIBLE', label: 'Visible Brightness' }
+  { value: 'VISIBLE', label: 'Visible Brightness' },
+  { value: 'COMBINED', label: 'Field Indices Analysis' }
 ])
 const COMPARE_PANEL_COLORS = Object.freeze({
   panelA: '#38bdf8',
@@ -62,6 +63,23 @@ function monthBefore(dateStr) {
   const d = new Date(dateStr)
   d.setMonth(d.getMonth() - 1)
   return formatDate(d)
+}
+
+function expandParameters(selectedParams) {
+  const expanded = new Set(selectedParams)
+  if (expanded.has('COMBINED')) {
+    expanded.add('LST')
+    expanded.add('SWIR')
+    expanded.add('NDVI')
+    expanded.add('NDWI')
+    expanded.add('VISIBLE')
+    // We don't delete 'COMBINED' here because we might want to track it, 
+    // but the backend fetching loop should filter it out if backend doesn't support it.
+    // However, the current code sends 'param' to backend.
+    // So we MUST filter it out from the list we iterate over for fetching.
+    expanded.delete('COMBINED')
+  }
+  return Array.from(expanded)
 }
 
 function MapClickHandler({ onPanelClick, selectedPanel }) {
@@ -103,6 +121,7 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
   const [compareState, setCompareState] = useState(defaultCompareState)
   const [filterMode, setFilterMode] = useState(false)
   const [filterMatchedIds, setFilterMatchedIds] = useState(null)
+  const [isFullScreenGraph, setIsFullScreenGraph] = useState(false)
 
   const compareIds = useMemo(() => {
     const normalize = (value) => {
@@ -227,6 +246,12 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
     })
   }
 
+  useEffect(() => {
+    if (activePaneIndex === null) {
+      setIsFullScreenGraph(false)
+    }
+  }, [activePaneIndex])
+
   const handleAnalyze = async () => {
     if (!startDate || !endDate) {
       console.warn('[WARN] Start and end dates are required to analyse panels.')
@@ -239,9 +264,10 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
 
     setAnalyzeLoading(true)
     try {
-      if (selectedParameters.includes('LST') && hasValidRange) {
+      const expandedParams = expandParameters(selectedParameters)
+      if (expandedParams.includes('LST') && hasValidRange) {
         await fetchAllLstData(startDate, endDate)
-      } else if (!selectedParameters.includes('LST') || !hasValidRange) {
+      } else if (!expandedParams.includes('LST') || !hasValidRange) {
         setPanelLstData({})
       }
 
@@ -252,7 +278,7 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
         const next = {}
         Object.entries(prev).forEach(([panelId, paramMap]) => {
           const filteredEntries = Object.entries(paramMap || {}).filter(([paramKey]) =>
-            selectedParameters.includes(paramKey)
+            expandedParams.includes(paramKey)
           )
           if (filteredEntries.length > 0) {
             next[panelId] = Object.fromEntries(filteredEntries)
@@ -491,7 +517,8 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
 
     visiblePanels.forEach(panelId => {
       const panelData = panelDataMap[panelId] || {}
-      const paramsToFetch = selectedParameters.filter(param => {
+      const expandedParams = expandParameters(selectedParameters)
+      const paramsToFetch = expandedParams.filter(param => {
         const existing = panelData[param]
         return !existing ||
                existing.error ||
@@ -624,7 +651,8 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
       })
       
       const panelData = panelDataMap[panelId] || {}
-      const paramsToFetch = selectedParameters.filter(param => {
+      const expandedParams = expandParameters(selectedParameters)
+      const paramsToFetch = expandedParams.filter(param => {
         const existing = panelData[param]
         return !existing ||
                existing.error ||
@@ -1055,31 +1083,7 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
             </MapContainer>
         </div>
 
-        {/* Floating Control Panel */}
-        {!compareMode && !filterMode && (
-          <div className="control-panel-container">
-            <ControlPanel
-              selectedParameters={selectedParameters}
-              onToggleParameter={handleToggleParameter}
-              parameterOptions={PARAMETER_OPTIONS}
-              startDate={startDate}
-              setStartDate={setStartDate}
-              endDate={endDate}
-              setEndDate={setEndDate}
-             
-              showPolygons={showPolygons}
-              setShowPolygons={setShowPolygons}
-              onLogout={handleLogout}
-              onAnalyze={handleAnalyze}
-              analyzeLoading={analyzeLoading}
-              onEnterCompare={handleEnterCompare}
-              onEnterFilter={handleEnterFilterMode}
-            />
-          </div>
-        )}
-
-        {/* Sliding Side Panels */}
-        {compareMode ? (
+          {compareMode ? (
             <ComparePanel
               compareState={compareState}
               onFieldChange={handleCompareFieldChange}
@@ -1100,27 +1104,43 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
               onUpdateMatchingPanels={handleFilterMatchesUpdate}
               onSelectPanel={(panelId) => setSelectedPanel(panelId)}
             />
-        ) : activePaneIndex !== null && panes[activePaneIndex] ? (
-          <div className="floating-data-panel-wrapper">
-            <DataPanel
-              key={`pane-${activePaneIndex}`}
-              id={`pane-${activePaneIndex}`}
-              paneIndex={activePaneIndex}
-              panelId={panes[activePaneIndex].id}
-              dataByParameter={panelDataMap[panes[activePaneIndex].id] || {}}
-              loading={Boolean(loadingMap[panes[activePaneIndex].id])}
-              selectedParameters={selectedParameters}
-              mapPanelValue={selectedParameters.includes('LST') ? panelLstData[String(panes[activePaneIndex].id)] : undefined}
-              onNavigateHistory={(dir) => handleNavigatePanelHistory(dir, activePaneIndex)}
-              onClose={() => handleClosePanel(activePaneIndex)}
-              onPaneClick={() => handlePaneClick(activePaneIndex)}
-              isActive={true}
-              panelName={`Panel ${panes[activePaneIndex].id}`}
-              hasAnalyzed={analyzeTick > 0}
-              analyzeTick={analyzeTick}
-            />
-          </div>
-        ) : null}
+          ) : (
+            <div className="panels-container">
+              <div className="panels-header">
+                <span className="panels-count">{panes.length} {panes.length === 1 ? 'Pane' : 'Panes'}</span>
+              </div>
+              <div className="panes-list" id="panes-list" role="list">
+                {panes.length === 0 ? (
+                  <div className="empty-panes-message">
+                    <p>SELECT A SOLAR PANEL FOR ANALYSIS</p>
+                  </div>
+                ) : (
+                  panes.map((pane, idx) => {
+                    const panelId = pane.id
+                    const isActive = activePaneIndex === idx
+                    return (
+                      <DataPanel
+                        key={`pane-${idx}`}
+                        id={`pane-${idx}`}
+                        paneIndex={idx}
+                        panelId={panelId}
+                        dataByParameter={panelDataMap[panelId] || {}}
+                        loading={Boolean(loadingMap[panelId])}
+                        selectedParameters={selectedParameters}
+                        mapPanelValue={selectedParameters.includes('LST') ? panelLstData[String(panelId)] : undefined}
+                        onNavigateHistory={(dir) => handleNavigatePanelHistory(dir, idx)}
+                        onClose={() => handleClosePanel(idx)}
+                        onPaneClick={() => handlePaneClick(idx)}
+                        isActive={isActive}
+                        panelName={`Panel ${panelId}`}
+                      />
+                    )
+                  })
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </>
   )
