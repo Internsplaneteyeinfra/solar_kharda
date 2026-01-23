@@ -535,13 +535,14 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
 
       paramsToFetch.forEach(param => {
         axios.post(`${API_BASE}/api/panel-data`, {
-          panel_id: panelId,
+          panel_ids: [Number(panelId)],
           parameter: param,
           start_date: startDate,
           end_date: endDate
         }).then(response => {
+          const resultData = response.data?.results?.[0] || {}
           const dataWithMeta = {
-            ...response.data,
+            ...resultData,
             parameter: param,
             start_date: startDate,
             end_date: endDate
@@ -554,7 +555,14 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
             }
           }))
         }).catch(error => {
-          const errorMessage = error.response?.data?.detail || error.message || 'Failed to fetch data'
+          let errorMessage = error.response?.data?.detail || error.message || 'Failed to fetch data'
+          if (typeof errorMessage !== 'string') {
+            try {
+              errorMessage = JSON.stringify(errorMessage)
+            } catch (e) {
+              errorMessage = 'Unknown error occurred'
+            }
+          }
           setPanelDataMap(prev => ({
             ...prev,
             [panelId]: {
@@ -1083,7 +1091,31 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
             </MapContainer>
         </div>
 
-          {compareMode ? (
+        {/* Floating Control Panel */}
+        {!compareMode && !filterMode && (
+          <div className="control-panel-container">
+            <ControlPanel
+              selectedParameters={selectedParameters}
+              onToggleParameter={handleToggleParameter}
+              parameterOptions={PARAMETER_OPTIONS}
+              startDate={startDate}
+              setStartDate={setStartDate}
+              endDate={endDate}
+              setEndDate={setEndDate}
+             
+              showPolygons={showPolygons}
+              setShowPolygons={setShowPolygons}
+              onLogout={handleLogout}
+              onAnalyze={handleAnalyze}
+              analyzeLoading={analyzeLoading}
+              onEnterCompare={handleEnterCompare}
+              onEnterFilter={handleEnterFilterMode}
+            />
+          </div>
+        )}
+
+        {/* Sliding Side Panels */}
+        {compareMode ? (
             <ComparePanel
               compareState={compareState}
               onFieldChange={handleCompareFieldChange}
@@ -1104,43 +1136,27 @@ function SolarAnalyzerApp({ isAuthed, setIsAuthed }) {
               onUpdateMatchingPanels={handleFilterMatchesUpdate}
               onSelectPanel={(panelId) => setSelectedPanel(panelId)}
             />
-          ) : (
-            <div className="panels-container">
-              <div className="panels-header">
-                <span className="panels-count">{panes.length} {panes.length === 1 ? 'Pane' : 'Panes'}</span>
-              </div>
-              <div className="panes-list" id="panes-list" role="list">
-                {panes.length === 0 ? (
-                  <div className="empty-panes-message">
-                    <p>SELECT A SOLAR PANEL FOR ANALYSIS</p>
-                  </div>
-                ) : (
-                  panes.map((pane, idx) => {
-                    const panelId = pane.id
-                    const isActive = activePaneIndex === idx
-                    return (
-                      <DataPanel
-                        key={`pane-${idx}`}
-                        id={`pane-${idx}`}
-                        paneIndex={idx}
-                        panelId={panelId}
-                        dataByParameter={panelDataMap[panelId] || {}}
-                        loading={Boolean(loadingMap[panelId])}
-                        selectedParameters={selectedParameters}
-                        mapPanelValue={selectedParameters.includes('LST') ? panelLstData[String(panelId)] : undefined}
-                        onNavigateHistory={(dir) => handleNavigatePanelHistory(dir, idx)}
-                        onClose={() => handleClosePanel(idx)}
-                        onPaneClick={() => handlePaneClick(idx)}
-                        isActive={isActive}
-                        panelName={`Panel ${panelId}`}
-                      />
-                    )
-                  })
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+        ) : activePaneIndex !== null && panes[activePaneIndex] ? (
+          <div className="floating-data-panel-wrapper">
+            <DataPanel
+              key={`pane-${activePaneIndex}`}
+              id={`pane-${activePaneIndex}`}
+              paneIndex={activePaneIndex}
+              panelId={panes[activePaneIndex].id}
+              dataByParameter={panelDataMap[panes[activePaneIndex].id] || {}}
+              loading={Boolean(loadingMap[panes[activePaneIndex].id])}
+              selectedParameters={selectedParameters}
+              mapPanelValue={selectedParameters.includes('LST') ? panelLstData[String(panes[activePaneIndex].id)] : undefined}
+              onNavigateHistory={(dir) => handleNavigatePanelHistory(dir, activePaneIndex)}
+              onClose={() => handleClosePanel(activePaneIndex)}
+              onPaneClick={() => handlePaneClick(activePaneIndex)}
+              isActive={true}
+              panelName={`Panel ${panes[activePaneIndex].id}`}
+              hasAnalyzed={analyzeTick > 0}
+              analyzeTick={analyzeTick}
+            />
+          </div>
+        ) : null}
       </div>
     </>
   )

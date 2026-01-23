@@ -48,20 +48,25 @@ body {
   height: 100vh;
   overflow: hidden;
   display: block;
-  font-size: 12px;
-  margin-bottom: 4px;
-  color: #cbd5f5;
 }
 
-.filter-date-range input {
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.2);
-  color: #fff;
-}
-
-.filter-date-actions {
+/* Fixed Logout Button */
+.fixed-logout-btn {
+<<<<<<< Updated upstream
+=======
+  margin-top: 35px;
+>>>>>>> Stashed changes
+  position: absolute;
+  top: 4px; /* Aligned with Control Panel top */
+  right: 24px;
+  z-index: 2000; /* High z-index to stay above everything */
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--color-panel-bg);
+  backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--color-panel-border);
+  color: var(--color-text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -425,334 +430,316 @@ input:focus {
 
 .compare-trigger-button {
   width: 100%;
-  height: 8px;
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.25);
-}
-
-.map-container {
-  flex: 1;
-  grid-area: map;
-  position: relative;
-  z-index: 1;
-  margin-top: 0;
-  background: rgb(40, 80, 90);
-  overflow: auto;
-  border-radius: 0;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.32);
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 550px; /* optional: set a minimum height */
-  min-width: 500px; /* optional: set a minimum width */
-  margin-right: 0;
-}
-
-.map-container .leaflet-container {
-  background: rgb(40, 80, 90) !important;
-  border-radius: inherit;
-  margin: 0;
-}
-
-.map-container .leaflet-tile-container img {
-  background: rgb(40, 80, 90) !important;
-}
-
-/* Hide white loading tiles and set dark background */
-.leaflet-container.leaflet-fade-anim .leaflet-tile {
-  background: rgb(51, 90, 40) !important;
-
-}
-
-/* Hide white tiles while loading - use background color instead */
-.leaflet-container .leaflet-tile-container img[src=""],
-.leaflet-container .leaflet-tile-container img:not([src]),
-.leaflet-container .leaflet-tile-container img[src*="data:image/svg"] {
-  background: rgb(77, 90, 40) !important;
-  display: none;
-}
-
-.leaflet-container .leaflet-tile-pane {
-  background: rgb(40, 80, 90) !important;
-}
-
-.leaflet-container .leaflet-control-container {
-  background: transparent !important;
-}
-
-/* Hide white tiles that are loading or missing */
-.leaflet-container .leaflet-tile {
-  background: rgb(40, 80, 90) !important;
-}
-
-.leaflet-container .leaflet-tile-loaded {
-  background: transparent !important;
-}
-
-/* Ensure no white backgrounds appear in map panes */
-.leaflet-container .leaflet-pane {
-  background: transparent !important;
-}
-
-.leaflet-container .leaflet-map-pane {
-  background: rgb(40, 80, 90) !important;
-}
-
-/* Prevent white backgrounds on loading or error tiles */
-.leaflet-container img.leaflet-tile {
-  background: rgb(40, 80, 90) !important;
-}
-
-/* Hide popup white backgrounds */
-.leaflet-popup-content-wrapper {
-  background: rgb(202, 213, 215) !important;
-  color: white !important;
-}
-
-.leaflet-popup-tip {
-  background: rgb(64, 116, 126) !important;
-}
-
-/* Hide attribution white background */
-.leaflet-container .leaflet-control-attribution {
-  background: rgba(40, 80, 90, 0.8) !important;
-  color: white !important;
-
-}
-
-.main-content.compare-active .map-container  {
-  grid-area: map;
-  width: 100%;
-  height: calc(100vh - 40px); /* full height minus top bar */
-}
-
-.compare-map-legend {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 16px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  margin: 6px 0 16px;
-}
-
-.compare-map-legend .legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
+  padding: 12px;
+  margin-top: 12px;
+  background: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-panel-border);
+  border-radius: var(--radius-md);
   font-weight: 600;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  cursor: pointer;
+  transition: var(--transition-fast);
 }
 
-.compare-map-legend .legend-swatch {
-  width: 16px;
-  height: 16px;
-  border-radius: 5px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.4);
+.compare-trigger-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--color-text-secondary);
 }
 
-.compare-map-legend .legend-label {
-  white-space: nowrap;
-}
 
-@media (max-width: 1200px) {
-  .main-content.compare-active  {
-  display: grid;
-  grid-template-columns: 5fr 1fr;
-  grid-template-areas: "map compare";
-  height: calc(100vh - 40px);
-  gap: 200px; /* optional spacing */
-}
 
-  .compare-panel-container {
-  grid-area: compare;
+.logout-button {
   width: 100%;
-  min-height: 200%; /* important for proper grid stretching */
+  padding: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-accent-red);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: var(--transition-fast);
 }
 
-  .main-content.compare-active .map-container{
-  grid-area: map;
-  width: 100%;
-  height: 100%;
-}
+.logout-button:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--color-accent-red);
 }
 
-.data-panel {
-  width: 100%;
-  background: rgb(64, 116, 126);
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.2);
+  transition: .3s;
+  border-radius: 34px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: var(--color-primary);
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+/* --- Right Side Panels (Data Panel) --- */
+
+.floating-data-panel-wrapper {
+  position: absolute;
+  top: 80px; /* Match left control panel top offset */
+  right: 24px;
+  width: 520px; /* Increased width for better visibility */
+  max-height: calc(100vh - 100px);
+  z-index: 200;
   display: flex;
   flex-direction: column;
-  z-index: 1000;
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  margin-bottom: 12px;
-  transition: border-color 0.2s ease, background-color 0.2s ease, outline 0.2s ease;
-  cursor: pointer;
-  will-change: auto;
+  pointer-events: none; /* Let clicks pass through outside the panel */
+<<<<<<< Updated upstream
+=======
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.data-panel:hover {
-  border-color: rgba(255, 255, 255, 0.4);
+.floating-data-panel-wrapper.full-screen-mode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  z-index: 9999;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: auto;
 }
 
-.panel-active {
-  outline: 2px solid #4ade80;
-  outline-offset: 2px;
-  background: rgb(64, 116, 126);
+.floating-data-panel-wrapper.full-screen-mode .data-panel {
+  width: 100%;
+  max-width: 1200px;
+  height: 100%;
+  max-height: 100%;
+  border: 1px solid var(--color-panel-border);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
-.panel-inactive {
-  background: rgb(54, 96, 106);
-  opacity: 0.9;
+.floating-data-panel-wrapper.full-screen-mode .chart-wrapper {
+  height: 60vh; /* Taller charts in full screen */
+>>>>>>> Stashed changes
 }
 
+/* Data Panel Card */
+.data-panel {
+  pointer-events: auto; /* Re-enable clicks */
+  background: var(--color-panel-bg);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--color-panel-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow-lg);
+  
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
 
 .data-panel-header {
-  padding: 20px;
-  background: rgb(64, 116, 126);
-  color: white;
+  padding: 16px 24px; /* Increased padding */
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--color-panel-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.header-buttons {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+  flex-shrink: 0;
 }
 
 .data-panel-header h3 {
-  font-size: 20px;
-}
-
-.close-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  font-size: 24px;
-  cursor: pointer;
-  padding: 5px 10px;
-  border-radius: 4px;
-  transition: background 0.2s;
-}
-
-.close-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.nav-buttons {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.nav-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 5px 10px;
-  border-radius: 4px;
-  transition: background 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-}
-
-.nav-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.nav-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.panels-container {
-  position: fixed;
-  right: 0;
-  top: 40px;
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 40px);
-  width: 324px; /* 440px * 1.10 = 484px */
-  padding: 26px;
-  z-index: 1000;
-  background: rgba(40, 80, 90, 0.95);
-  border-left: 0.5px solid rgba(16, 8, 8, 0.2);
-  box-sizing: border-box;
-  margin-left: 0;
-  overflow-y: auto;
-}
-
-.panels-header {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 12px 0;
-  margin-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.panels-count {
-  font-size: 14px;
+  margin: 0;
+  font-size: 16px;
   font-weight: 700;
-  color:#040b12;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.panes-list {
-  flex: 1;
+.data-panel-content {
+  padding: 24px; /* Increased padding */
+  padding-bottom: 40px; /* Extra bottom padding for comfortable scrolling */
   overflow-y: auto;
-  max-height: calc(100vh - 120px);
-  padding-right: 4px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Increased gap between blocks */
+  scroll-behavior: smooth;
+  
+  /* Custom Scrollbar for content */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.05);
+}
+
+<<<<<<< Updated upstream
+=======
+.fullscreen-toggle-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-panel-border);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-left: auto; /* Push to right */
+}
+
+.fullscreen-toggle-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--color-text-primary);
+  border-color: var(--color-panel-border-hover);
+}
+
+.fullscreen-toggle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: transparent;
+  border-color: transparent;
+}
+
+>>>>>>> Stashed changes
+.data-panel-content::-webkit-scrollbar {
+  width: 8px; /* Slightly wider for better usability */
+}
+.data-panel-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+.data-panel-content::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  border: 2px solid transparent; /* Creates padding effect */
+  background-clip: content-box;
+}
+.data-panel-content::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Parameter Blocks */
+.parameter-block {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--color-panel-border);
+  border-radius: var(--radius-lg);
+  /* overflow: hidden; Removed to prevent content clipping */
+  transition: all 0.3s ease;
+  animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0; /* Prevent shrinking in flex container */
   display: flex;
   flex-direction: column;
 }
 
-.empty-panes-message {
-  flex: 1;
+.chart-wrapper {
+  width: 100%;
+  height: 320px;
+  min-height: 320px; /* Force minimum height */
+  position: relative;
+}
+
+.parameter-block:hover {
+  border-color: var(--color-panel-border-hover);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.parameter-block-header {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--color-panel-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  text-align: center;
 }
 
-.empty-panes-message p {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
+.parameter-block-header h4 {
   margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.panes-list::-webkit-scrollbar {
-  width: 6px;
+.parameter-divider {
+  height: 1px;
+  background: var(--color-panel-border);
+  width: 100%;
 }
 
-.panes-list::-webkit-scrollbar-track {
+.block-close-button {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.block-close-button:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-
-.panes-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 3px;
-}
-
-.panes-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-primary);
 }
 
 .parameter-block-body {

@@ -12,7 +12,14 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional, List, Dict
 from datetime import datetime, timedelta
-from app.kharda.services import get_soiling_data as calculate_soiling_data
+from app.kharda.services import (
+    get_soiling_data as calculate_soiling_data,
+    get_lst_data,
+    get_swir_data,
+    get_ndvi_data,
+    get_ndwi_data,
+    get_visible_mean_data
+)
 
 
 try:
@@ -24,10 +31,18 @@ try:
         check_data_availability,
         get_latest_soiling_record,
     )
+    
+    try:
+        from app.kharda.database import insert_timeseries_data
+    except ImportError:
+        print("[WARN] Could not import insert_timeseries_data")
+        insert_timeseries_data = None
+
     DB_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     DB_AVAILABLE = False
-    print("Warning: Database module not available. API will only use GEE.")
+    insert_timeseries_data = None
+    print(f"Warning: Database module not available. API will only use GEE. Error: {e}")
 
 router = APIRouter()
 
@@ -157,20 +172,68 @@ async def get_panel_data(query: PanelQuery):
 
         # ===================== OTHER PARAMETERS =====================
         else:
-            try:
-                timeseries = get_timeseries_data(
-                    panel_id,
-                    parameter,
-                    start_date,
-                    end_date
-                )
-            except Exception as e:
-                print(f"[ERROR] Error fetching timeseries data from database for panel {panel_id}: {e}")
-                panel_result.update({
-                    "error": "Error fetching panel data"
-                })
-                results.append(panel_result)
-                continue
+            timeseries = []
+            if DB_AVAILABLE:
+                try:
+                    print(f"[DEBUG] Fetching DB: panel={panel_id}, param={parameter}, start={start_date}, end={end_date}")
+                    timeseries = get_timeseries_data(
+                        panel_id,
+                        parameter,
+                        start_date,
+                        end_date
+                    )
+                    print(f"[DEBUG] DB returned {len(timeseries)} records")
+                except Exception as e:
+                    print(f"[ERROR] Error fetching timeseries data from database for panel {panel_id}: {e}")
+            else:
+                print("[WARN] DB_AVAILABLE is False, skipping DB fetch")
+            
+            # If no data in DB, try GEE
+            if not timeseries:
+                print(f"[INFO] No data in DB for {parameter} (panel {panel_id}). Fetching from GEE...")
+                try:
+                    # Get geometry
+                    with open(POLYGONS_PATH_STR, "r") as f:
+                        geojson = json.load(f)
+                    feature = next(
+                        f for f in geojson["features"]
+                        if f["properties"]["panel_id"] == panel_id
+                    )
+                    geometry = ee.Geometry(feature["geometry"])
+
+                    # Call appropriate service
+                    gee_data = None
+                    if parameter == 'LST':
+                        gee_data = await get_lst_data(geometry, start_date, end_date)
+                    elif parameter == 'SWIR':
+                        gee_data = await get_swir_data(geometry, start_date, end_date)
+                    elif parameter == 'NDVI':
+                        gee_data = await get_ndvi_data(geometry, start_date, end_date)
+                    elif parameter == 'NDWI':
+                        gee_data = await get_ndwi_data(geometry, start_date, end_date)
+                    elif parameter == 'VISIBLE':
+                        gee_data = await get_visible_mean_data(geometry, start_date, end_date)
+                    
+                    if gee_data and gee_data.get('timeseries'):
+                        timeseries = gee_data['timeseries']
+                        # Cache to DB
+                        if DB_AVAILABLE and insert_timeseries_data:
+                            print(f"[INFO] Caching {len(timeseries)} records to DB for {parameter} (panel {panel_id})")
+                            for record in timeseries:
+                                try:
+                                    insert_timeseries_data(
+                                        panel_id,
+                                        parameter,
+                                        record['date'],
+                                        record['value'],
+                                        record['unit']
+                                    )
+                                except Exception as db_err:
+                                    print(f"[WARN] Failed to cache record: {db_err}")
+                        elif DB_AVAILABLE and not insert_timeseries_data:
+                            print(f"[WARN] Skipping cache: insert_timeseries_data not available")
+                except Exception as gee_err:
+                    print(f"[ERROR] GEE fetch failed for {parameter} (panel {panel_id}): {gee_err}")
 
             if not timeseries:
                 panel_result.update({
