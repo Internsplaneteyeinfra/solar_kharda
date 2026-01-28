@@ -11,9 +11,24 @@ from app.kharda.routes import router as kharda_router
 
 
 def init_solar_gee():
+    # Only try to initialize if not already initialized
     try:
-        base_dir = Path(__file__).resolve().parent.parent / "solar-backend-python"
+        ee.Image("NASA/NASADEM_HGT").getInfo()
+        print("Solar GEE already initialized, skipping re-init.")
+        return
+    except:
+        pass
+
+    try:
+        # First try unified backend credentials
+        base_dir = Path(__file__).resolve().parent.parent
         credentials_path = base_dir / "credentials.json"
+        
+        if not credentials_path.exists():
+            # Fallback to solar-backend-python credentials
+            base_dir = Path(__file__).resolve().parent.parent / "solar-backend-python"
+            credentials_path = base_dir / "credentials.json"
+            
         if not credentials_path.exists():
             print(f"Solar GEE credentials.json not found at {credentials_path}")
             return
@@ -26,7 +41,7 @@ def init_solar_gee():
             key_data=json.dumps(credentials),
         )
         ee.Initialize(auth, project=credentials.get("project_id"))
-        print("Solar GEE initialized successfully using Service Account.")
+        print(f"Solar GEE initialized successfully using Service Account from {credentials_path}")
     except Exception as e:
         print(f"Solar GEE initialization error: {e}")
 

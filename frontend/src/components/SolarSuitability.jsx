@@ -7,6 +7,7 @@ import UploadCard from "./solarSuitability/UploadCard"
 import ResultsSection from "./solarSuitability/ResultsSection"
 import DataPanel from "./solarSuitability/DataPanel";
 import FilterPanel from "./solarSuitability/FilterPanel";
+import WeatherPanel from "./solarSuitability/WeatherPanel";
 
 import "./solarSuitability/solarSuitability.css"
 
@@ -16,8 +17,14 @@ export default function SolarSuitability() {
   window.turf = turf;
   window.L = L;
 
+  // Initialize icons
+  setTimeout(() => {
+      if (window.lucide) window.lucide.createIcons();
+  }, 100);
+
   const interval = setInterval(() => {
     const uploadBtn = document.getElementById('upload-btn');
+    const uploadCardContainer = document.getElementById('upload-card-container');
     const kmlUploadInput = document.getElementById('kml-upload');
 
     if (uploadBtn && kmlUploadInput) {
@@ -31,37 +38,127 @@ export default function SolarSuitability() {
 
 
   return (
-    <div className="ss-container ss-app-shell text-slate-800 h-screen w-screen overflow-hidden relative bg-slate-100">
+    <div className="ss-container ss-app-shell text-slate-200 h-screen w-screen overflow-hidden relative bg-slate-900">
       {/* Global Map Background */}
-      <div id="map" className="absolute inset-0 z-0 h-full w-full" />
+      <div id="map" className="absolute inset-0 z-0 h-full w-full grayscale-[0.2] contrast-[1.1]" />
+      
+      {/* Dark Overlay for better text contrast if map is bright */}
+      <div className="absolute inset-0 z-0 bg-slate-900/10 pointer-events-none" />
 
-      {/* Main Content Overlay */}
-      <div className="relative z-10 h-full flex flex-col pointer-events-none">
-        <div className="pointer-events-auto bg-white/80 backdrop-blur-sm border-b border-white/20">
-            <Header />
-        </div>
+      {/* Main Content Overlay - 3 Column Grid */}
+      <div className="relative z-10 h-full p-2 grid grid-cols-12 gap-1 pointer-events-none">
         
-        <div className="flex-1 flex flex-col items-center justify-center p-4">
-          <div className="flex flex-col lg:flex-row justify-center gap-8 items-center w-full max-w-7xl">
-            {/* Upload Card and Controls - pointer events re-enabled inside */}
-            <div className="pointer-events-auto">
+        {/* Left Column - Weather & Stats */}
+        <div className="col-span-2 flex flex-col gap-2 pointer-events-auto z-20">
+             <div className="bg-[#0f172a]/80 backdrop-blur-md rounded-xl border border-cyan-500/30 p-2 shadow-lg mb-2">
+                 <Header />
+             </div>
+             <WeatherPanel />
+        </div>
+
+        {/* Center Column - Map View Area (Upload Card Centered) */}
+        <div className="col-span-7 relative pointer-events-none">
+            {/* Map Controls - Top Right of Center Column */}
+            <div className="absolute top-2 right-2 z-30 pointer-events-auto flex gap-2">
+                 <button
+                    id="street-view-toggle"
+                    className="bg-[#0f172a]/90 hover:bg-slate-800 text-cyan-400 p-3 rounded-full shadow-lg border border-cyan-500/30 transition-all hover:scale-110 active:scale-95"
+                    title="Toggle Street View Mode"
+                 >
+                    <i data-lucide="map" className="w-5 h-5" />
+                 </button>
+                 <button
+                    id="map-type-toggle"
+                    className="bg-[#0f172a]/90 hover:bg-slate-800 text-cyan-400 p-3 rounded-full shadow-lg border border-cyan-500/30 transition-all hover:scale-110 active:scale-95"
+                    title="Toggle Map Type"
+                 >
+                    <i data-lucide="layers" className="w-5 h-5" />
+                 </button>
+            </div>
+
+            {/* Improvement Suggestions Overlay - Moved to Map Area */}
+            <div className="absolute top-20 right-4 z-30 pointer-events-auto w-64 bg-[#0f172a]/90 backdrop-blur-md p-4 rounded-xl border border-cyan-500/30 shadow-lg max-h-[350px] overflow-y-auto hidden" id="suggestions-container">
+              <div className="flex items-center gap-2 mb-3 border-b border-cyan-500/20 pb-2 sticky top-0 bg-[#0f172a]/90 -mx-1 px-1">
+                <div className="bg-green-500/20 text-green-400 p-1.5 rounded-full">
+                  <i data-lucide="lightbulb" className="w-4 h-4" />
+                </div>
+                <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase">Suggestions</h3>
+              </div>
+              <ul id="suggestions-list" className="space-y-3 text-sm">
+                <li className="flex items-start gap-2 text-slate-400 italic">
+                  <i data-lucide="info" className="w-4 h-4 text-cyan-500 mt-0.5 flex-shrink-0" />
+                  <span>Suggestions will appear here based on the analysis.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Upload Card - Centered absolutely or relatively */}
+            <div id="upload-card-container" className="absolute top-8 left-1/2 transform -translate-x-1/2 w-full max-w-md pointer-events-auto z-30 transition-all duration-500">
                 <UploadCard />
             </div>
             
-            {/* Results Section - pointer events re-enabled inside */}
-            <div className="pointer-events-auto">
-                <ResultsSection />
+            {/* KML Summary & Power Line Details - Floating at bottom left */}
+            <div className="absolute bottom-4 left-4 w-auto max-w-4xl pointer-events-auto z-30 flex flex-row items-end gap-4">
+                 {/* KML Summary (Hidden by default) */}
+                <div id="kml-summary" className="min-w-[320px] bg-[#0f172a]/90 backdrop-blur-md rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] hidden transition-all duration-300">
+                  <div className="p-3 border-b border-cyan-500/20 flex justify-between items-center">
+                     <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase border-l-2 border-cyan-500 pl-2">Area Summary</h3>
+                  </div>
+                  <div className="p-3 grid grid-cols-4 gap-3">
+                      <div className="text-center bg-slate-900/50 rounded p-2 border border-slate-700">
+                        <p className="text-lg font-bold text-white" id="total-areas">--</p>
+                        <p className="text-[9px] text-slate-400 uppercase tracking-wide">Areas</p>
+                      </div>
+                      <div className="text-center bg-slate-900/50 rounded p-2 border border-slate-700">
+                        <p className="text-lg font-bold text-green-400" id="highest-score">--</p>
+                        <p className="text-[9px] text-slate-400 uppercase tracking-wide">High</p>
+                      </div>
+                      <div className="text-center bg-slate-900/50 rounded p-2 border border-slate-700">
+                        <p className="text-lg font-bold text-red-400" id="lowest-score">--</p>
+                        <p className="text-[9px] text-slate-400 uppercase tracking-wide">Low</p>
+                      </div>
+                      <div className="text-center bg-slate-900/50 rounded p-2 border border-slate-700">
+                        <p className="text-lg font-bold text-cyan-400" id="average-score">--</p>
+                        <p className="text-[9px] text-slate-400 uppercase tracking-wide">Avg</p>
+                      </div>
+                  </div>
+                </div>
+
+                {/* Power Line Details (Hidden by default) */}
+                <div id="power-line-details" className="min-w-[220px] bg-[#0f172a]/90 backdrop-blur-md rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] p-4 hidden transition-all duration-300">
+                  <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase border-l-2 border-cyan-500 pl-2 mb-3">Grid Connection</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-sm border-b border-slate-800 pb-1">
+                        <span className="text-slate-400">Aerial Dist</span>
+                        <span id="aerial-distance" className="text-white font-mono">-- km</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm border-b border-slate-800 pb-1">
+                        <span className="text-slate-400">Road Dist</span>
+                        <div className="text-right">
+                            <span id="road-distance" className="text-white font-mono block">-- km</span>
+                            <span id="road-distance-note" className="text-[10px] text-slate-500 block">--</span>
+                        </div>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-400">Voltage</span>
+                        <span id="voltage-level" className="text-yellow-400 font-mono">--</span>
+                    </div>
+                  </div>
+                </div>
+
+                <FilterPanel />
             </div>
-          </div>
         </div>
+
+        {/* Right Column - Results & Recommendations */}
+        <div className="col-span-3 flex flex-col gap-4 pointer-events-auto z-20 overflow-y-auto no-scrollbar pb-20">
+             <ResultsSection />
+        </div>
+      </div>
         
-        {/* Panels could be floating at bottom or sides if needed */}
-        <div className="pointer-events-auto">
-             <DataPanel />
-        </div>
-        <div className="pointer-events-auto">
-             <FilterPanel />
-        </div>
+      {/* Data Panel - Keep as floating or integrate? Keeping floating for now */}
+      <div className="absolute bottom-4 right-4 z-30 pointer-events-auto">
+           <DataPanel />
       </div>
     </div>
   )
@@ -75,6 +172,7 @@ export function initAnalyzer() {
 
     // --- DOM Element References ---
     const uploadBtn = document.getElementById('upload-btn');
+    const uploadCardContainer = document.getElementById('upload-card-container');
     const kmlUploadInput = document.getElementById('kml-upload');
     const fileNameContainer = document.getElementById('file-name');
     const fileNameDisplay = fileNameContainer ? fileNameContainer.querySelector('span') : null;
@@ -90,6 +188,7 @@ export function initAnalyzer() {
     const errorText = document.getElementById('error-text');
     const mapSection = document.getElementById('map-section');
     const kmlSummary = document.getElementById('kml-summary');
+    const powerLineDetails = document.getElementById('power-line-details');
     const toggleKmlLayer = document.getElementById('toggle-kml-layer');
     const toggleScoreLayer = document.getElementById('toggle-score-layer');
     const progressContainer = document.getElementById('progress-container');
@@ -834,10 +933,15 @@ export function initAnalyzer() {
 
         console.log('Summary scores:', { scores, highestScore, lowestScore, averageScore });
 
-        document.getElementById('total-areas').textContent = totalAreas;
-        document.getElementById('highest-score').textContent = highestScore.toFixed(2);
-        document.getElementById('lowest-score').textContent = lowestScore.toFixed(2);
-        document.getElementById('average-score').textContent = averageScore.toFixed(2);
+        const totalAreasEl = document.getElementById('total-areas');
+        const highestScoreEl = document.getElementById('highest-score');
+        const lowestScoreEl = document.getElementById('lowest-score');
+        const averageScoreEl = document.getElementById('average-score');
+
+        if (totalAreasEl) totalAreasEl.textContent = totalAreas;
+        if (highestScoreEl) highestScoreEl.textContent = highestScore.toFixed(2);
+        if (lowestScoreEl) lowestScoreEl.textContent = lowestScore.toFixed(2);
+        if (averageScoreEl) averageScoreEl.textContent = averageScore.toFixed(2);
     }
 
     /**
@@ -872,6 +976,7 @@ export function initAnalyzer() {
         errorMessage.classList.add('hidden');
         // mapSection.classList.add('hidden'); // Map should stay visible as background
         kmlSummary.classList.add('hidden');
+        if (powerLineDetails) powerLineDetails.classList.add('hidden');
         hideProgress();
 
         const reader = new FileReader();
@@ -960,6 +1065,11 @@ export function initAnalyzer() {
                 // Hide progress and show results with smooth transitions
                 hideProgress();
                 
+                // Hide the upload card container
+                if (uploadCardContainer) {
+                    uploadCardContainer.classList.add('hidden');
+                }
+                
                 // Show success notification
                 showNotification('KML analysis completed successfully!', 'success');
                 
@@ -985,12 +1095,15 @@ export function initAnalyzer() {
                 setTimeout(() => {
                     // mapSection.style.opacity = '0';
                     kmlSummary.style.opacity = '0';
+                    if (powerLineDetails) powerLineDetails.style.opacity = '0';
                     // mapSection.style.transition = 'opacity 0.5s ease-in-out';
                     kmlSummary.style.transition = 'opacity 0.5s ease-in-out';
+                    if (powerLineDetails) powerLineDetails.style.transition = 'opacity 0.5s ease-in-out';
                     
                     setTimeout(() => {
                         // mapSection.style.opacity = '1';
                         kmlSummary.style.opacity = '1';
+                        if (powerLineDetails) powerLineDetails.style.opacity = '1';
                         
                         // Final map size adjustment after animation
                         if (map) {
@@ -1237,10 +1350,10 @@ export function initAnalyzer() {
      * Display error message
      */
     function displayError(message) {
-        loader.classList.add('hidden');
-        resultsContent.classList.add('hidden');
-        errorText.textContent = message;
-        errorMessage.classList.remove('hidden');
+        if (loader) loader.classList.add('hidden');
+        if (resultsContent) resultsContent.classList.add('hidden');
+        if (errorText) errorText.textContent = message;
+        if (errorMessage) errorMessage.classList.remove('hidden');
     }
 
     /**
@@ -1251,10 +1364,19 @@ export function initAnalyzer() {
         if (kmlLayer) kmlLayer.clearLayers();
         if (scoreLayer) scoreLayer.clearLayers();
         
+        // Hide suggestions container
+        const suggestionsContainer = document.getElementById('suggestions-container');
+        if (suggestionsContainer) suggestionsContainer.classList.add('hidden');
+
         // Reset global variables
         currentKmlData = null;
         areaAnalysisResults = [];
         fullAreaResults = [];
+        
+        // Show the upload card container again
+        if (uploadCardContainer) {
+            uploadCardContainer.classList.remove('hidden');
+        }
         
         // Clear file input to allow re-upload of same file
         const kmlUploadInput = document.getElementById('kml-upload');
@@ -1268,65 +1390,82 @@ export function initAnalyzer() {
      */
     function displayResults(analysisResult) {
         const rawData = analysisResult.rawData;
-        decisionMatrixBody.innerHTML = '';
+
+        // Show suggestions container
+        const suggestionsContainer = document.getElementById('suggestions-container');
+        if (suggestionsContainer) suggestionsContainer.classList.remove('hidden');
+        
+        // Clear table body
+        if (decisionMatrixBody) decisionMatrixBody.innerHTML = '';
+        
         suggestionsList.innerHTML = '';
         let suggestions = [];
 
         // Use the enhanced final score calculation
         const totalWeightedScore = calculateFinalScore(rawData);
 
-        // Display ALL parameters from the configuration
-        parametersConfig.forEach(param => {
+        // Helper to get parameter data
+        const getParamData = (key) => {
+            const param = parametersConfig.find(p => p.key === key);
+            if (!param) return null;
+            
             let rawValue = fixPrecisionIssues(param.key, rawData[param.key]);
             let score = 0;
 
-            // Handle special cases with enhanced logic
             if (param.key === 'landOwnership') {
                 rawValue = parseInt(landOwnershipSelect.value, 10);
                 score = (rawValue === 1) ? 10 : 5;
             } else if (param.key === 'elevation') {
                 score = (rawValue >= 50 && rawValue <= 1500) ? 10 : 2;
             } else if (param.key === 'landCover') {
-                // Use enhanced land cover scoring with vegetation bias correction
                 score = calculateEnhancedLandCoverScore(rawValue, rawData);
             } else if (param.thresholds) {
                 score = calculateScore(rawValue, param);
             } else {
-                // Default score for parameters without thresholds
                 score = 5;
             }
-
-            const weightedScore = score * param.weight;
-
-            // Add suggestions for parameters with low scores
+            
+            // Suggestions logic
             if (score < 5 && param.suggestion) {
                 suggestions.push(param.suggestion);
             }
 
-            // Format raw value display
+            // Display value formatting
             let displayValue = 'N/A';
             if (rawValue !== null && rawValue !== undefined) {
                 if (param.key === 'landOwnership') {
-                    // Use the user's selection from the dropdown, not the backend value
                     const userSelection = parseInt(landOwnershipSelect.value, 10);
-                    displayValue = userSelection === 1 ? 'Government/Barren Land' : 'Private Land';
+                    displayValue = userSelection === 1 ? 'Govt/Barren' : 'Private';
                 } else if (param.key === 'landCover') {
                     displayValue = rawValue.toString();
                 } else {
                     displayValue = Number(rawValue).toFixed(2);
+                    if (param.unit) displayValue += param.unit;
                 }
             }
+            
+            return { param, score, displayValue, rawValue };
+        };
 
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${param.name}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${displayValue}${param.unit || ''}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-bold">${score.toFixed(1)}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${(param.weight * 100).toFixed(0)}%</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-bold">${weightedScore.toFixed(2)}</td>
-            `;
-            decisionMatrixBody.appendChild(row);
-        });
+        // Populate Decision Matrix Table
+        if (decisionMatrixBody) {
+            parametersConfig.forEach(param => {
+                const data = getParamData(param.key);
+                if (!data) return;
+
+                const weightedScore = data.score * param.weight;
+                const scoreColorClass = data.score >= 7 ? 'text-green-400' : (data.score >= 4 ? 'text-amber-400' : 'text-red-400');
+                
+                const row = document.createElement('tr');
+                row.className = 'border-b border-slate-700/50 hover:bg-slate-800/30 transition-colors';
+                row.innerHTML = `
+                    <td class="px-6 py-4 text-sm text-slate-300">${data.param.name}</td>
+                    <td class="px-6 py-4 text-sm font-mono text-right text-slate-300">${data.displayValue}</td>
+                    <td class="px-6 py-4 text-sm font-bold text-right ${scoreColorClass}">${data.score.toFixed(1)}</td>
+                `;
+                decisionMatrixBody.appendChild(row);
+            });
+        }
 
         // Update summary
         finalScoreDisplay.textContent = totalWeightedScore.toFixed(2);
@@ -1354,7 +1493,7 @@ export function initAnalyzer() {
         if (suggestions.length > 0) {
             suggestions.forEach(s => {
                 const li = document.createElement('li');
-                li.className = 'flex items-start gap-2 text-slate-600';
+                li.className = 'flex items-start gap-2 text-slate-300';
                 li.innerHTML = `
                     <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0"></i>
                     <span>${s}</span>
@@ -1363,7 +1502,7 @@ export function initAnalyzer() {
             });
         } else {
             suggestionsList.innerHTML = `
-                <li class="flex items-start gap-2 text-slate-600">
+                <li class="flex items-start gap-2 text-slate-300">
                     <i data-lucide="check-circle" class="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0"></i>
                     <span>Excellent site! No major concerns identified based on the parameters.</span>
                 </li>
@@ -1386,6 +1525,8 @@ export function initAnalyzer() {
         const roadDistanceEl = document.getElementById('road-distance');
         const roadDistanceNoteEl = document.getElementById('road-distance-note');
         const voltageLevelEl = document.getElementById('voltage-level');
+
+        if (!powerLineSection) return;
 
         if (!powerLineDetails) {
             powerLineSection.classList.add('hidden');
@@ -1416,14 +1557,16 @@ export function initAnalyzer() {
             }
         }
 
-        aerialDistanceEl.textContent = `${aerialDist} km`;
-        roadDistanceEl.textContent = `${roadDist} km`;
-        voltageLevelEl.textContent = voltage === 'Unknown' ? 'Unknown' : `${voltage} kV`;
+        if (aerialDistanceEl) aerialDistanceEl.textContent = `${aerialDist} km`;
+        if (roadDistanceEl) roadDistanceEl.textContent = `${roadDist} km`;
+        if (voltageLevelEl) voltageLevelEl.textContent = voltage === 'Unknown' ? 'Unknown' : `${voltage} kV`;
         
-        if (roadDist === 'N/A') {
-            roadDistanceNoteEl.textContent = 'No road access found';
-        } else {
-            roadDistanceNoteEl.textContent = 'Via nearest roads';
+        if (roadDistanceNoteEl) {
+            if (roadDist === 'N/A') {
+                roadDistanceNoteEl.textContent = 'No road access found';
+            } else {
+                roadDistanceNoteEl.textContent = 'Via nearest roads';
+            }
         }
         
         // Re-render icons

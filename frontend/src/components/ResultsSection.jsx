@@ -58,7 +58,7 @@ export default function ResultsSection() {
               </thead>
               <tbody id="decision-matrix-body" className="bg-white divide-y divide-slate-200">
                 <tr>
-                  <td colSpan="5" className="p-6 text-center text-slate-500">
+                  <td colSpan="3" className="p-6 text-center text-slate-500">
                     Upload a KML file to see the analysis.
                   </td>
                 </tr>

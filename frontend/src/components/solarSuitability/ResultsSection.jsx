@@ -1,63 +1,73 @@
 export default function ResultsSection() {
   return (
-    <div id="results-section" className="w-full lg:flex-1 space-y-8 hidden">
-      <div id="loader" className="hidden bg-white p-6 rounded-xl shadow-md border border-slate-200 mb-6">
+    <div id="results-section" className="w-full transition-all duration-500 hidden">
+      {/* Loading State */}
+      <div id="loader" className="hidden bg-[#0f172a]/90 backdrop-blur-md p-6 rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] mb-6">
         <div className="flex items-center justify-center">
-          <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-16 w-16 mr-4" />
-          <div className="text-center">
-            <h3 className="text-xl font-semibold text-slate-700">Analyzing Your Site...</h3>
-            <p className="text-slate-500 mt-1">Fetching satellite data and calculating parameters.</p>
+          <div className="animate-spin rounded-full border-4 border-slate-700 border-t-cyan-400 h-12 w-12 mr-4 shadow-[0_0_10px_rgba(34,211,238,0.5)]" />
+          <div className="text-left">
+            <h3 className="text-lg font-semibold text-cyan-50">Analyzing Site...</h3>
+            <p className="text-slate-400 text-sm mt-1">Fetching satellite data...</p>
           </div>
         </div>
-        <div id="progress-container" className="w-full max-w-md mt-4 mx-auto hidden">
-          <div className="flex justify-between text-sm text-slate-600 mb-2">
-            <span id="progress-text">Processing areas...</span>
+        <div id="progress-container" className="w-full mt-4 mx-auto hidden">
+          <div className="flex justify-between text-xs text-cyan-400 mb-2 font-mono">
+            <span id="progress-text">Processing...</span>
             <span id="progress-percentage">0%</span>
           </div>
-          <div className="w-full bg-slate-200 rounded-full h-2">
-            <div id="progress-bar" className="bg-blue-600 h-2 rounded-full transition-all duration-300" />
+          <div className="w-full bg-slate-800 rounded-full h-1.5 border border-slate-700">
+            <div id="progress-bar" className="bg-cyan-500 h-1.5 rounded-full transition-all duration-300 shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
           </div>
         </div>
       </div>
 
-      <div id="error-message" className="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg" role="alert">
-        <p className="font-bold">Analysis Failed</p>
-        <p id="error-text">Error text will be inserted here.</p>
+      {/* Error Message */}
+      <div id="error-message" className="hidden bg-red-900/20 border border-red-500/50 text-red-200 p-4 rounded-lg backdrop-blur-sm mb-6" role="alert">
+        <div className="flex items-center gap-2 mb-1 text-red-400">
+            <i data-lucide="alert-circle" className="w-5 h-5" />
+            <span className="font-bold uppercase tracking-wider text-xs">Analysis Failed</span>
+        </div>
+        <p id="error-text" className="text-sm opacity-90">Error text will be inserted here.</p>
       </div>
 
-      <div id="results-content" className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200 text-center">
-            <h3 className="text-lg font-semibold text-slate-700 mb-2">Final Weighted Score</h3>
-            <p id="final-score" className="text-5xl font-bold text-slate-800 my-2">--</p>
-            <p className="text-slate-500">out of 10</p>
+      <div id="results-content" className="space-y-4">
+        {/* Score & Rec Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-[#0f172a]/90 backdrop-blur-md p-5 rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+            <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase mb-2 border-l-2 border-cyan-500 pl-2">Final Weighted Score</h3>
+            <div className="flex items-end gap-2">
+                <p id="final-score" className="text-6xl font-bold text-white tracking-tighter shadow-cyan-500/50 drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]">--</p>
+                <p className="text-slate-400 text-sm mb-2 font-mono">/ 10</p>
+            </div>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200 text-center">
-            <h3 className="text-lg font-semibold text-slate-700 mb-2">Recommendation</h3>
-            <p id="decision-result" className="text-5xl font-bold text-slate-500 my-2 flex items-center justify-center gap-3">--</p>
+          
+          <div className="bg-[#0f172a]/90 backdrop-blur-md p-5 rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+            <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase mb-2 border-l-2 border-cyan-500 pl-2">Recommendation</h3>
+            <p id="decision-result" className="text-xl font-bold text-white flex items-center gap-3">--</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-md border border-slate-200">
-          <div className="p-6 border-b border-slate-200">
-            <h3 className="text-xl font-semibold text-slate-700">Decision Matrix Breakdown</h3>
-            <p className="text-slate-500 mt-1">Detailed scoring for each suitability parameter.</p>
+        {/* Decision Matrix Table */}
+        <div className="bg-[#0f172a]/90 backdrop-blur-md rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+          <div className="p-4 border-b border-cyan-500/20">
+            <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase">Decision Matrix Breakdown</h3>
+            <p className="text-slate-400 text-[10px] mt-1">Detailed scoring for each suitability parameter.</p>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-slate-50">
+            <table className="min-w-full text-left text-xs text-slate-300">
+              <thead className="bg-slate-800/50 text-cyan-400 uppercase font-medium">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Parameter</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Raw Value</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Score (1-10)</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Weight</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Weighted Score</th>
+                  <th className="px-6 py-3 tracking-wider border-b border-slate-700/50">Parameter</th>
+                  <th className="px-6 py-3 tracking-wider border-b border-slate-700/50">Weight</th>
+                  <th className="px-6 py-3 tracking-wider border-b border-slate-700/50">Raw Value</th>
+                  <th className="px-6 py-3 tracking-wider border-b border-slate-700/50">Score (1-10)</th>
+                  <th className="px-6 py-3 tracking-wider border-b border-slate-700/50">Weighted Score</th>
                 </tr>
               </thead>
-              <tbody id="decision-matrix-body" className="bg-white divide-y divide-slate-200">
+              <tbody id="decision-matrix-body" className="divide-y divide-slate-700/50">
                 <tr>
-                  <td colSpan="5" className="p-6 text-center text-slate-500">
-                    Upload a KML file to see the analysis.
+                  <td colSpan="5" className="p-6 text-center text-slate-500 italic">
+                    Waiting for analysis...
                   </td>
                 </tr>
               </tbody>
@@ -65,85 +75,67 @@ export default function ResultsSection() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-green-100 text-green-600 p-2 rounded-full">
-              <i data-lucide="lightbulb" />
+        {/* Map Section */}
+        <div id="map-section" className="bg-[#0f172a]/90 backdrop-blur-md rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] hidden">
+          <div className="p-4 border-b border-cyan-500/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="bg-green-500/20 text-green-400 p-1.5 rounded-full">
+                  <i data-lucide="map" className="w-4 h-4" />
+                </div>
+                <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase">Suitability Map</h3>
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer hover:text-cyan-400 transition-colors">
+                  <input type="checkbox" id="toggle-kml-layer" className="rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500/50" defaultChecked />
+                  <span>Boundaries</span>
+                </label>
+                <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer hover:text-cyan-400 transition-colors">
+                  <input type="checkbox" id="toggle-score-layer" className="rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500/50" defaultChecked />
+                  <span>Scores</span>
+                </label>
+              </div>
             </div>
-            <h3 className="text-xl font-semibold text-slate-700">Improvement Suggestions</h3>
           </div>
-          <ul id="suggestions-list" className="space-y-3">
-            <li className="flex items-start gap-2 text-slate-600">
-              <i data-lucide="info" className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-              <span>Suggestions will appear here based on the analysis.</span>
-            </li>
-          </ul>
-        </div>
+          <div className="relative">
 
-        <div id="kml-summary" className="bg-white rounded-xl shadow-md border border-slate-200 hidden">
-          <div className="p-6 border-b border-slate-200">
-            <div className="flex items-center gap-3">
-              <div className="bg-purple-100 text-purple-600 p-2 rounded-full">
-                <i data-lucide="bar-chart-3" />
-              </div>
-              <h3 className="text-xl font-semibold text-slate-700">KML Analysis Summary</h3>
-            </div>
-            <p className="text-slate-500 mt-1">Overall statistics for all uploaded areas.</p>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-slate-800" id="total-areas">--</p>
-                <p className="text-sm text-slate-500">Total Areas</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-green-600" id="highest-score">--</p>
-                <p className="text-sm text-slate-500">Highest Score</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-red-600" id="lowest-score">--</p>
-                <p className="text-sm text-slate-500">Lowest Score</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600" id="average-score">--</p>
-                <p className="text-sm text-slate-500">Average Score</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div id="power-line-details" className="bg-blue-50 border border-blue-200 rounded-lg p-6 hidden">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-blue-100 text-blue-600 p-2 rounded-full">
-              <i data-lucide="zap" />
-            </div>
-            <h3 className="text-lg font-semibold text-blue-900">Power Line Information</h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-lg p-4 border border-blue-200">
-              <div className="flex items-center gap-2 mb-2">
-                <i data-lucide="map-pin" className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-900">Aerial Distance</span>
+             {/* Map Legend */}
+            <div id="map-legend" className="absolute top-4 right-4 bg-[#0f172a]/90 backdrop-blur-md p-3 rounded-lg border border-cyan-500/30 z-10 max-w-48 shadow-lg">
+                <div className="space-y-2">
+                  <div className="border-b border-slate-700/50 pb-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-3 h-3 border border-cyan-500 border-dashed bg-cyan-500/20" />
+                      <span className="text-[10px] font-medium text-slate-300">Boundaries</span>
+                    </div>
+                  </div>
+  
+                  <div>
+                    <p className="text-[10px] font-medium text-slate-400 mb-1">Suitability</p>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-sm" />
+                        <span className="text-[10px] text-slate-300">8-10 (High)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-yellow-500 rounded-sm" />
+                        <span className="text-[10px] text-slate-300">5-7 (Med)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-orange-500 rounded-sm" />
+                        <span className="text-[10px] text-slate-300">3-4 (Low)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-red-500 rounded-sm" />
+                        <span className="text-[10px] text-slate-300">1-2 (Poor)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p id="aerial-distance" className="text-2xl font-bold text-blue-700">-- km</p>
-              <p className="text-xs text-blue-600">Direct line distance</p>
-            </div>
-            <div className="bg-white rounded-lg p-4 border border-blue-200">
-              <div className="flex items-center gap-2 mb-2">
-                <i data-lucide="route" className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-900">Road Distance</span>
-              </div>
-              <p id="road-distance" className="text-2xl font-bold text-blue-700">-- km</p>
-              <p id="road-distance-note" className="text-xs text-blue-600">Via nearest roads</p>
-            </div>
-            <div className="bg-white rounded-lg p-4 border border-blue-200">
-              <div className="flex items-center gap-2 mb-2">
-                <i data-lucide="activity" className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-900">Voltage Level</span>
-              </div>
-              <p id="voltage-level" className="text-2xl font-bold text-blue-700">--</p>
-              <p className="text-xs text-blue-600">Nearest power line</p>
-            </div>
+            <div id="map" className="h-[550px] w-full rounded-b-xl grayscale-[0.3]" />
+            
+
           </div>
         </div>
       </div>
