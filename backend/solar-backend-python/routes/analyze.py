@@ -356,7 +356,12 @@ async def process_analysis(geom_dict):
 
     except Exception as e:
         print(f"Analysis Critical Failure: {e}")
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+        error_msg = str(e)
+        if "invalid_grant" in error_msg or "not initialized" in error_msg or "no project found" in error_msg:
+             error_msg = "Google Earth Engine Authentication Failed. Please check server logs and credentials.json."
+        elif "Caller does not have required permission" in error_msg:
+             error_msg = "Permission Denied: The authenticated account lacks 'Service Usage Consumer' role. Please enable the Earth Engine API in Google Cloud Console."
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {error_msg}")
 
 @router.post("")
 async def analyze(request: AnalysisRequest):

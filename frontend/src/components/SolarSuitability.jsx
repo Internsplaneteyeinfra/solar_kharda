@@ -4,7 +4,6 @@ import * as turf from '@turf/turf';
 import L from 'leaflet';
 import Header from "./solarSuitability/Header"
 import UploadCard from "./solarSuitability/UploadCard"
-import MapOptionsCard from "./solarSuitability/MapOptionsCard"
 import ResultsSection from "./solarSuitability/ResultsSection"
 import DataPanel from "./solarSuitability/DataPanel";
 import FilterPanel from "./solarSuitability/FilterPanel";
@@ -32,17 +31,37 @@ export default function SolarSuitability() {
 
 
   return (
-    
-    <div className="ss-container ss-app-shell text-slate-800">
-      <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl min-h-screen">
-        <Header />
-        <div className="flex flex-col lg:flex-row justify-center gap-8 items-start">
-          <UploadCard />
-          <MapOptionsCard />
-          <ResultsSection />
+    <div className="ss-container ss-app-shell text-slate-800 h-screen w-screen overflow-hidden relative bg-slate-100">
+      {/* Global Map Background */}
+      <div id="map" className="absolute inset-0 z-0 h-full w-full" />
+
+      {/* Main Content Overlay */}
+      <div className="relative z-10 h-full flex flex-col pointer-events-none">
+        <div className="pointer-events-auto bg-white/80 backdrop-blur-sm border-b border-white/20">
+            <Header />
         </div>
-        <DataPanel />
-        <FilterPanel />
+        
+        <div className="flex-1 flex flex-col items-center justify-center p-4">
+          <div className="flex flex-col lg:flex-row justify-center gap-8 items-center w-full max-w-7xl">
+            {/* Upload Card and Controls - pointer events re-enabled inside */}
+            <div className="pointer-events-auto">
+                <UploadCard />
+            </div>
+            
+            {/* Results Section - pointer events re-enabled inside */}
+            <div className="pointer-events-auto">
+                <ResultsSection />
+            </div>
+          </div>
+        </div>
+        
+        {/* Panels could be floating at bottom or sides if needed */}
+        <div className="pointer-events-auto">
+             <DataPanel />
+        </div>
+        <div className="pointer-events-auto">
+             <FilterPanel />
+        </div>
       </div>
     </div>
   )
@@ -84,7 +103,7 @@ export function initAnalyzer() {
         toggleScoreLayer: !!toggleScoreLayer
     });
 
-    // --- Global Variables ---
+    // Global Variables
     let map = null;
     let kmlLayer = null;
     let scoreLayer = null;
@@ -93,6 +112,15 @@ export function initAnalyzer() {
     let fullAreaResults = []; // Store full area results for summary and decision matrix
     let currentMapType = 'roadmap'; // 'roadmap' or 'satellite'
     let streetViewMode = false;
+
+    // Initialize map immediately if container exists
+    if (document.getElementById('map')) {
+        setTimeout(() => {
+             // We need to call initializeMap but it might not be defined yet if not hoisted? 
+             // Function declarations are hoisted.
+             initializeMap();
+        }, 500);
+    }
 
     // Global function for street view (accessible from popup buttons)
     window.openStreetViewModal = function(lat, lng) {
@@ -842,7 +870,7 @@ export function initAnalyzer() {
         resultsContent.classList.add('hidden');
         loader.classList.remove('hidden');
         errorMessage.classList.add('hidden');
-        mapSection.classList.add('hidden');
+        // mapSection.classList.add('hidden'); // Map should stay visible as background
         kmlSummary.classList.add('hidden');
         hideProgress();
 
@@ -936,7 +964,7 @@ export function initAnalyzer() {
                 showNotification('KML analysis completed successfully!', 'success');
                 
                 // Show map and summary sections with fade-in animation
-                mapSection.classList.remove('hidden');
+                // mapSection.classList.remove('hidden');
                 kmlSummary.classList.remove('hidden');
                 console.log('Map and summary sections made visible');
                 
@@ -955,13 +983,13 @@ export function initAnalyzer() {
                 
                 // Add fade-in animation
                 setTimeout(() => {
-                    mapSection.style.opacity = '0';
+                    // mapSection.style.opacity = '0';
                     kmlSummary.style.opacity = '0';
-                    mapSection.style.transition = 'opacity 0.5s ease-in-out';
+                    // mapSection.style.transition = 'opacity 0.5s ease-in-out';
                     kmlSummary.style.transition = 'opacity 0.5s ease-in-out';
                     
                     setTimeout(() => {
-                        mapSection.style.opacity = '1';
+                        // mapSection.style.opacity = '1';
                         kmlSummary.style.opacity = '1';
                         
                         // Final map size adjustment after animation
@@ -1009,7 +1037,7 @@ export function initAnalyzer() {
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: 'Unknown server error' }));
-            throw new Error(errorData.error || `Server error: ${response.status}`);
+            throw new Error(errorData.error || errorData.detail || `Server error: ${response.status}`);
         }
 
         const rawData = await response.json();

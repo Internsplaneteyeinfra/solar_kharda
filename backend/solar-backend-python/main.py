@@ -12,21 +12,38 @@ async def lifespan(app: FastAPI):
     # Startup: Initialize GEE
     try:
         credentials_path = 'credentials.json'
-        if not os.path.exists(credentials_path):
-            print(f"Warning: {credentials_path} not found.")
-        else:
-            with open(credentials_path) as f:
-                credentials = json.load(f)
-            
-            # Use ServiceAccountCredentials as requested
-            auth = ee.ServiceAccountCredentials(
-                email=credentials['client_email'], 
-                key_data=json.dumps(credentials)
-            )
-            
-            # Initialize with auth and project_id
-            ee.Initialize(auth, project=credentials['project_id'])
-            print("GEE Initialized successfully using Service Account.")
+        initialized = False
+        
+        if os.path.exists(credentials_path):
+            try:
+                print(f"Loading GEE credentials from {os.path.abspath(credentials_path)}")
+                with open(credentials_path) as f:
+                    credentials = json.load(f)
+                
+                # Use ServiceAccountCredentials as requested
+                auth = ee.ServiceAccountCredentials(
+                    email=credentials['client_email'], 
+                    key_data=json.dumps(credentials)
+                )
+                
+                # Initialize with auth and project_id
+                ee.Initialize(auth, project=credentials['project_id'])
+                print("GEE Initialized successfully using Service Account.")
+                initialized = True
+            except Exception as e_sa:
+                print(f"Service Account initialization failed: {e_sa}")
+                print("Falling back to default credentials...")
+
+        if not initialized:
+            # Fallback to default credentials (gcloud auth application-default login)
+            try:
+                ee.Initialize()
+                print("GEE Initialized successfully using Default Credentials.")
+            except Exception as e_default:
+                print(f"Default GEE initialization failed: {e_default}")
+                print("CRITICAL: No valid GEE credentials found.")
+                print("Please run 'earthengine authenticate' locally or update credentials.json")
+
     except Exception as e:
         print(f"GEE Initialization Error: {e}")
     

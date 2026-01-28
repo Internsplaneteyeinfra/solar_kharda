@@ -896,6 +896,7 @@ input:checked + .toggle-slider:before {
   overflow-y: auto;
   gap: 16px;
   box-sizing: border-box;
+  margin-top: 45px;
 }
 
 .compare-panel-header {
