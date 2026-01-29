@@ -47,26 +47,39 @@ export default function ResultsSection() {
           </div>
         </div>
 
-        {/* Decision Matrix Table */}
+        {/* Solar & Climatic Parameters - Grid Layout */}
+        <div className="bg-gradient-to-br from-slate-900/95 to-cyan-950/40 backdrop-blur-lg rounded-xl border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.25)]">
+            <div className="p-4 border-b border-cyan-500/20">
+            <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase">Solar & Climatic Parameters</h3>
+           
+          </div>
+          <div id="solar-parameters-grid" className="p-4 grid grid-cols-2 gap-3">
+             <div className="text-center text-slate-500 italic p-2">Waiting for analysis...</div>
+          </div>
+        </div>
+
+        {/* Land Use & Ownership Table - Moved to LandUsePanel */}
+
+        {/* Slope - Single Parameter Display (Moved to SlopePanel on Map) */}
+        
+        {/* Site & Terrain Parameters Table */}
         <div className="bg-[#0f172a]/90 backdrop-blur-md rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
-          <div className="p-4 border-b border-cyan-500/20">
-            <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase">Decision Matrix Breakdown</h3>
-            <p className="text-slate-400 text-[10px] mt-1">Detailed scoring for each suitability parameter.</p>
+          <div className="p-5 border-b border-cyan-500/30">
+            <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase">Site & Terrain Parameters</h3>
+            <p className="text-slate-400 text-[10px] mt-1">Topography, land use, and infrastructure.</p>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-xs text-slate-300">
               <thead className="bg-slate-800/50 text-cyan-400 uppercase font-medium">
                 <tr>
                   <th className="px-6 py-3 tracking-wider border-b border-slate-700/50">Parameter</th>
-                  <th className="px-6 py-3 tracking-wider border-b border-slate-700/50">Weight</th>
                   <th className="px-6 py-3 tracking-wider border-b border-slate-700/50">Raw Value</th>
                   <th className="px-6 py-3 tracking-wider border-b border-slate-700/50">Score (1-10)</th>
-                  <th className="px-6 py-3 tracking-wider border-b border-slate-700/50">Weighted Score</th>
                 </tr>
               </thead>
               <tbody id="decision-matrix-body" className="divide-y divide-slate-700/50">
                 <tr>
-                  <td colSpan="5" className="p-6 text-center text-slate-500 italic">
+                  <td colSpan="3" className="p-6 text-center text-slate-500 italic">
                     Waiting for analysis...
                   </td>
                 </tr>
@@ -98,7 +111,21 @@ export default function ResultsSection() {
             </div>
           </div>
           <div className="relative">
-
+            {/* Improvement Suggestions Overlay */}
+            <div id="suggestions-container" className="absolute top-64 right-4 z-[9999] w-72 bg-[#0f172a] border-2 border-cyan-500/50 p-4 rounded-xl shadow-2xl max-h-[350px] overflow-y-auto hidden">
+                <div className="flex items-center gap-2 mb-3 border-b border-cyan-500/20 pb-2 sticky top-0 bg-[#0f172a]/95 -mx-1 px-1">
+                <div className="bg-green-500/20 text-green-400 p-1.5 rounded-full">
+                    <i data-lucide="lightbulb" className="w-4 h-4" />
+                </div>
+                <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase">Suggestions</h3>
+                </div>
+                <ul id="suggestions-list" className="space-y-3 text-sm">
+                <li className="flex items-start gap-2 text-slate-400 italic">
+                    <i data-lucide="info" className="w-4 h-4 text-cyan-500 mt-0.5 flex-shrink-0" />
+                    <span>Suggestions will appear here based on the analysis.</span>
+                </li>
+                </ul>
+            </div>
 
              {/* Map Legend */}
             <div id="map-legend" className="absolute top-4 right-4 bg-[#0f172a]/90 backdrop-blur-md p-3 rounded-lg border border-cyan-500/30 z-10 max-w-48 shadow-lg">

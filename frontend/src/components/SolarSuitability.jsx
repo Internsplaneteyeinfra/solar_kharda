@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import * as toGeoJSON from '@tmcw/togeojson';
 import * as turf from '@turf/turf';
 import L from 'leaflet';
@@ -8,10 +8,15 @@ import ResultsSection from "./solarSuitability/ResultsSection"
 import DataPanel from "./solarSuitability/DataPanel";
 import FilterPanel from "./solarSuitability/FilterPanel";
 import WeatherPanel from "./solarSuitability/WeatherPanel";
+import LandUsePanel from "./solarSuitability/LandUsePanel";
+import SlopePanel from "./solarSuitability/SlopePanel";
+import RiskPanel from "./solarSuitability/RiskPanel";
 
 import "./solarSuitability/solarSuitability.css"
 
 export default function SolarSuitability() {
+  const[showSuggestions, setShowSuggestions] = useState(false);
+
   useEffect(() => {
   window.toGeoJSON = toGeoJSON;
   window.turf = turf;
@@ -54,10 +59,19 @@ export default function SolarSuitability() {
                  <Header />
              </div>
              <WeatherPanel />
+             <div className="relative">
+                  <LandUsePanel />
+                  <div className="absolute top-0 left-full ml-2 w-[300px] h-full">
+                      <RiskPanel />
+                  </div>
+              </div>
         </div>
 
         {/* Center Column - Map View Area (Upload Card Centered) */}
         <div className="col-span-7 relative pointer-events-none">
+            {/* Slope Panel on Map (Top Left) */}
+            <SlopePanel />
+
             {/* Map Controls - Top Right of Center Column */}
             <div className="absolute top-2 right-2 z-30 pointer-events-auto flex gap-2">
                  <button
@@ -74,10 +88,20 @@ export default function SolarSuitability() {
                  >
                     <i data-lucide="layers" className="w-5 h-5" />
                  </button>
+                 <button
+                   onClick={() => setShowSuggestions(prev => !prev)}
+                   className="bg-[#0f172a]/90 hover:bg-slate-800 text-cyan-400 p-3 rounded-full shadow-lg border border-cyan-500/30 transition-all hover:scale-110 active:scale-95"
+                   title="Toggle Suggestions"
+               >
+                   <i data-lucide={showSuggestions ? "eye" : "eye-off"} className="w-5 h-5" />
+                 </button>
+
             </div>
 
             {/* Improvement Suggestions Overlay - Moved to Map Area */}
-            <div className="absolute top-20 right-4 z-30 pointer-events-auto w-64 bg-[#0f172a]/90 backdrop-blur-md p-4 rounded-xl border border-cyan-500/30 shadow-lg max-h-[350px] overflow-y-auto hidden" id="suggestions-container">
+            {showSuggestions &&(
+            <div className="absolute top-20 right-4 z-30 pointer-events-auto w-64 bg-gradient-to-br from-slate-900/95 to-cyan-950/40 backdrop-blur-lg p-4 rounded-xl border border-cyan-500/30 shadow-lg" id="suggestions-container">
+
               <div className="flex items-center gap-2 mb-3 border-b border-cyan-500/20 pb-2 sticky top-0 bg-[#0f172a]/90 -mx-1 px-1">
                 <div className="bg-green-500/20 text-green-400 p-1.5 rounded-full">
                   <i data-lucide="lightbulb" className="w-4 h-4" />
@@ -91,6 +115,7 @@ export default function SolarSuitability() {
                 </li>
               </ul>
             </div>
+            )}
 
             {/* Upload Card - Centered absolutely or relatively */}
             <div id="upload-card-container" className="absolute top-8 left-1/2 transform -translate-x-1/2 w-full max-w-md pointer-events-auto z-30 transition-all duration-500">
@@ -98,31 +123,32 @@ export default function SolarSuitability() {
             </div>
             
             {/* KML Summary & Power Line Details - Floating at bottom left */}
-            <div className="absolute bottom-4 left-4 w-auto max-w-4xl pointer-events-auto z-30 flex flex-row items-end gap-4">
-                 {/* KML Summary (Hidden by default) */}
-                <div id="kml-summary" className="min-w-[320px] bg-[#0f172a]/90 backdrop-blur-md rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] hidden transition-all duration-300">
-                  <div className="p-3 border-b border-cyan-500/20 flex justify-between items-center">
-                     <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase border-l-2 border-cyan-500 pl-2">Area Summary</h3>
-                  </div>
-                  <div className="p-3 grid grid-cols-4 gap-3">
-                      <div className="text-center bg-slate-900/50 rounded p-2 border border-slate-700">
-                        <p className="text-lg font-bold text-white" id="total-areas">--</p>
-                        <p className="text-[9px] text-slate-400 uppercase tracking-wide">Areas</p>
-                      </div>
-                      <div className="text-center bg-slate-900/50 rounded p-2 border border-slate-700">
-                        <p className="text-lg font-bold text-green-400" id="highest-score">--</p>
-                        <p className="text-[9px] text-slate-400 uppercase tracking-wide">High</p>
-                      </div>
-                      <div className="text-center bg-slate-900/50 rounded p-2 border border-slate-700">
-                        <p className="text-lg font-bold text-red-400" id="lowest-score">--</p>
-                        <p className="text-[9px] text-slate-400 uppercase tracking-wide">Low</p>
-                      </div>
-                      <div className="text-center bg-slate-900/50 rounded p-2 border border-slate-700">
-                        <p className="text-lg font-bold text-cyan-400" id="average-score">--</p>
-                        <p className="text-[9px] text-slate-400 uppercase tracking-wide">Avg</p>
-                      </div>
+            {/* Bottom Floating Controls & Info */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-2 w-auto max-w-7xl pointer-events-auto z-30 flex flex-row items-end gap-4 overflow-x-auto pb-2 no-scrollbar">
+
+                {/* KML Summary (Restored to floating position) */}
+                <div id="kml-summary" className="min-w-[220px] bg-[#0f172a]/90 backdrop-blur-md rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] p-6 hidden transition-all duration-300">
+                  <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase border-l-2 border-cyan-500 pl-2 mb-3">Area Summary</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-slate-900/50 p-2 rounded border border-slate-700/50 text-center">
+                        <span id="total-areas" className="block text-xl font-bold text-white leading-none">--</span>
+                        <span className="text-[10px] text-slate-400 uppercase">Areas</span>
+                    </div>
+                    <div className="bg-slate-900/50 p-2 rounded border border-slate-700/50 text-center">
+                        <span id="average-score" className="block text-xl font-bold text-cyan-400 leading-none">--</span>
+                        <span className="text-[10px] text-slate-400 uppercase">Avg Score</span>
+                    </div>
+                    <div className="bg-slate-900/50 p-2 rounded border border-slate-700/50 text-center">
+                        <span id="highest-score" className="block text-xl font-bold text-green-400 leading-none">--</span>
+                        <span className="text-[10px] text-slate-400 uppercase">High</span>
+                    </div>
+                    <div className="bg-slate-900/50 p-2 rounded border border-slate-700/50 text-center">
+                        <span id="lowest-score" className="block text-xl font-bold text-red-400 leading-none">--</span>
+                        <span className="text-[10px] text-slate-400 uppercase">Low</span>
+                    </div>
                   </div>
                 </div>
+
 
                 {/* Power Line Details (Hidden by default) */}
                 <div id="power-line-details" className="min-w-[220px] bg-[#0f172a]/90 backdrop-blur-md rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] p-4 hidden transition-all duration-300">
@@ -178,8 +204,11 @@ export function initAnalyzer() {
     const fileNameDisplay = fileNameContainer ? fileNameContainer.querySelector('span') : null;
     const landOwnershipSelect = document.getElementById('land-ownership');
     const resultsSection = document.getElementById('results-section');
+    const landUsePanel = document.getElementById('land-use-panel');
     const resultsContent = document.getElementById('results-content');
     const decisionMatrixBody = document.getElementById('decision-matrix-body');
+    const solarParametersGrid = document.getElementById('solar-parameters-grid');
+    const landUseMatrixBody = document.getElementById('land-use-matrix-body'); // New separate table for land use
     const finalScoreDisplay = document.getElementById('final-score');
     const decisionResultDisplay = document.getElementById('decision-result');
     const suggestionsList = document.getElementById('suggestions-list');
@@ -189,6 +218,7 @@ export function initAnalyzer() {
     const mapSection = document.getElementById('map-section');
     const kmlSummary = document.getElementById('kml-summary');
     const powerLineDetails = document.getElementById('power-line-details');
+    const slopePanel = document.getElementById('slope-panel');
     const toggleKmlLayer = document.getElementById('toggle-kml-layer');
     const toggleScoreLayer = document.getElementById('toggle-score-layer');
     const progressContainer = document.getElementById('progress-container');
@@ -972,6 +1002,7 @@ export function initAnalyzer() {
         resultsSection.classList.remove('hidden');
         resultsSection.style.opacity = '1';
         resultsContent.classList.add('hidden');
+        if (landUsePanel) landUsePanel.classList.add('hidden');
         loader.classList.remove('hidden');
         errorMessage.classList.add('hidden');
         // mapSection.classList.add('hidden'); // Map should stay visible as background
@@ -1076,6 +1107,8 @@ export function initAnalyzer() {
                 // Show map and summary sections with fade-in animation
                 // mapSection.classList.remove('hidden');
                 kmlSummary.classList.remove('hidden');
+                if (slopePanel) slopePanel.classList.remove('hidden');
+                if (powerLineDetails) powerLineDetails.classList.remove('hidden');
                 console.log('Map and summary sections made visible');
                 
                 // Setup map controls after map is visible
@@ -1096,14 +1129,17 @@ export function initAnalyzer() {
                     // mapSection.style.opacity = '0';
                     kmlSummary.style.opacity = '0';
                     if (powerLineDetails) powerLineDetails.style.opacity = '0';
+                    if (slopePanel) slopePanel.style.opacity = '0';
                     // mapSection.style.transition = 'opacity 0.5s ease-in-out';
                     kmlSummary.style.transition = 'opacity 0.5s ease-in-out';
                     if (powerLineDetails) powerLineDetails.style.transition = 'opacity 0.5s ease-in-out';
+                    if (slopePanel) slopePanel.style.transition = 'opacity 0.5s ease-in-out';
                     
                     setTimeout(() => {
                         // mapSection.style.opacity = '1';
                         kmlSummary.style.opacity = '1';
                         if (powerLineDetails) powerLineDetails.style.opacity = '1';
+                        if (slopePanel) slopePanel.style.opacity = '1';
                         
                         // Final map size adjustment after animation
                         if (map) {
@@ -1125,6 +1161,7 @@ export function initAnalyzer() {
 
                 loader.classList.add('hidden');
                 resultsContent.classList.remove('hidden');
+                if (landUsePanel) landUsePanel.classList.remove('hidden');
                 lucide.createIcons();
 
             } catch (error) {
@@ -1395,8 +1432,10 @@ export function initAnalyzer() {
         const suggestionsContainer = document.getElementById('suggestions-container');
         if (suggestionsContainer) suggestionsContainer.classList.remove('hidden');
         
-        // Clear table body
+        // Clear table bodies / grid
         if (decisionMatrixBody) decisionMatrixBody.innerHTML = '';
+        if (solarParametersGrid) solarParametersGrid.innerHTML = '';
+        if (landUseMatrixBody) landUseMatrixBody.innerHTML = '';
         
         suggestionsList.innerHTML = '';
         let suggestions = [];
@@ -1447,23 +1486,142 @@ export function initAnalyzer() {
             return { param, score, displayValue, rawValue };
         };
 
-        // Populate Decision Matrix Table
-        if (decisionMatrixBody) {
+        // Populate Decision Matrix Tables / Grid
+        const solarParams = ['ghi', 'temperature', 'shading', 'dust'];
+        const landUseParams = ['landCover', 'landOwnership'];
+
+        if (decisionMatrixBody || solarParametersGrid || landUseMatrixBody) {
             parametersConfig.forEach(param => {
+                // Skip slope from display table as requested (calculation remains unaffected)
+                if (param.key === 'slope') {
+                    // Update the dedicated slope card
+                    const slopeData = getParamData(param.key);
+                    const slopeValueEl = document.getElementById('slope-value');
+                    const slopeScoreEl = document.getElementById('slope-score');
+                    
+                    if (slopeData && slopeValueEl && slopeScoreEl) {
+                        slopeValueEl.textContent = slopeData.displayValue;
+                        slopeScoreEl.textContent = slopeData.score.toFixed(1);
+                        
+                        // Set color for score
+                        const slopeScoreColor = slopeData.score >= 7 ? 'text-green-400' : (slopeData.score >= 4 ? 'text-amber-400' : 'text-red-400');
+                        slopeScoreEl.className = `font-bold ${slopeScoreColor}`;
+                    }
+                    return;
+                }
+
+                // Skip elevation from display table as requested (calculation remains unaffected)
+                if (param.key === 'elevation') {
+                    // Update the dedicated elevation section in SlopePanel
+                    const elevationData = getParamData(param.key);
+                    const elevationValueEl = document.getElementById('elevation-value');
+                    const elevationScoreEl = document.getElementById('elevation-score');
+                    
+                    if (elevationData && elevationValueEl && elevationScoreEl) {
+                        elevationValueEl.textContent = elevationData.displayValue;
+                        elevationScoreEl.textContent = elevationData.score.toFixed(1);
+                        
+                        // Set color for score
+                        const elevationScoreColor = elevationData.score >= 7 ? 'text-green-400' : (elevationData.score >= 4 ? 'text-amber-400' : 'text-red-400');
+                        elevationScoreEl.className = `font-bold ${elevationScoreColor}`;
+                    }
+                    return;
+                }
+
+                // Skip soil stability from display table as requested (calculation remains unaffected)
+                if (param.key === 'soilStability') {
+                    const soilData = getParamData(param.key);
+                    const soilValueEl = document.getElementById('soil-value');
+                    const soilScoreEl = document.getElementById('soil-score');
+
+                    if (soilData && soilValueEl && soilScoreEl) {
+                        soilValueEl.textContent = soilData.displayValue;
+                        soilScoreEl.textContent = soilData.score.toFixed(1);
+
+                        const soilScoreColor = soilData.score >= 7 ? 'text-green-400' : (soilData.score >= 4 ? 'text-amber-400' : 'text-red-400');
+                        soilScoreEl.className = `font-bold ${soilScoreColor}`;
+                    }
+                    return;
+                }
+
+                // Skip seismic risk from display table as requested (calculation remains unaffected)
+                if (param.key === 'seismicRisk') {
+                    const seismicData = getParamData(param.key);
+                    const seismicValueEl = document.getElementById('seismic-value');
+                    const seismicScoreEl = document.getElementById('seismic-score');
+
+                    if (seismicData && seismicValueEl && seismicScoreEl) {
+                        seismicValueEl.textContent = seismicData.displayValue;
+                        seismicScoreEl.textContent = seismicData.score.toFixed(1);
+
+                        const seismicScoreColor = seismicData.score >= 7 ? 'text-green-400' : (seismicData.score >= 4 ? 'text-amber-400' : 'text-red-400');
+                        seismicScoreEl.className = `font-bold ${seismicScoreColor}`;
+                    }
+                    return;
+                }
+
+                // Skip flood risk from display table as requested (calculation remains unaffected)
+                if (param.key === 'floodRisk') {
+                    const floodData = getParamData(param.key);
+                    const floodValueEl = document.getElementById('flood-value');
+                    const floodScoreEl = document.getElementById('flood-score');
+
+                    if (floodData && floodValueEl && floodScoreEl) {
+                        floodValueEl.textContent = floodData.displayValue;
+                        floodScoreEl.textContent = floodData.score.toFixed(1);
+
+                        const floodScoreColor = floodData.score >= 7 ? 'text-green-400' : (floodData.score >= 4 ? 'text-amber-400' : 'text-red-400');
+                        floodScoreEl.className = `font-bold ${floodScoreColor}`;
+                    }
+                    return;
+                }
+
                 const data = getParamData(param.key);
                 if (!data) return;
 
                 const weightedScore = data.score * param.weight;
                 const scoreColorClass = data.score >= 7 ? 'text-green-400' : (data.score >= 4 ? 'text-amber-400' : 'text-red-400');
                 
-                const row = document.createElement('tr');
-                row.className = 'border-b border-slate-700/50 hover:bg-slate-800/30 transition-colors';
-                row.innerHTML = `
-                    <td class="px-6 py-4 text-sm text-slate-300">${data.param.name}</td>
-                    <td class="px-6 py-4 text-sm font-mono text-right text-slate-300">${data.displayValue}</td>
-                    <td class="px-6 py-4 text-sm font-bold text-right ${scoreColorClass}">${data.score.toFixed(1)}</td>
-                `;
-                decisionMatrixBody.appendChild(row);
+                // Append to correct container
+                if (solarParams.includes(param.key)) {
+                    if (solarParametersGrid) {
+                        const card = document.createElement('div');
+                        card.className = 'bg-slate-800/40 p-3 rounded-lg border border-slate-700/50 hover:border-cyan-500/30 transition-all flex items-center justify-between';
+                        card.innerHTML = `
+                            <div class="flex flex-col">
+                                <span class="text-slate-400 text-[10px] uppercase tracking-wider mb-1">${data.param.name}</span>
+                                <span class="text-slate-200 font-mono text-sm">${data.displayValue}</span>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span class="text-[10px] text-slate-500 mb-1">Score</span>
+                                <span class="text-sm font-bold ${scoreColorClass}">${data.score.toFixed(1)}</span>
+                            </div>
+                        `;
+                        solarParametersGrid.appendChild(card);
+                    }
+                } else if (landUseParams.includes(param.key)) {
+                    if (landUseMatrixBody) {
+                        const row = document.createElement('tr');
+                        row.className = 'border-b border-slate-700/50 hover:bg-slate-800/30 transition-colors';
+                        row.innerHTML = `
+                            <td class="px-6 py-4 text-sm text-slate-300">${data.param.name}</td>
+                            <td class="px-6 py-4 text-sm font-mono text-right text-slate-300">${data.displayValue}</td>
+                            <td class="px-6 py-4 text-sm font-bold text-right ${scoreColorClass}">${data.score.toFixed(1)}</td>
+                        `;
+                        landUseMatrixBody.appendChild(row);
+                    }
+                } else {
+                    if (decisionMatrixBody) {
+                        const row = document.createElement('tr');
+                        row.className = 'border-b border-slate-700/50 hover:bg-slate-800/30 transition-colors';
+                        row.innerHTML = `
+                            <td class="px-6 py-4 text-sm text-slate-300">${data.param.name}</td>
+                            <td class="px-6 py-4 text-sm font-mono text-right text-slate-300">${data.displayValue}</td>
+                            <td class="px-6 py-4 text-sm font-bold text-right ${scoreColorClass}">${data.score.toFixed(1)}</td>
+                        `;
+                        decisionMatrixBody.appendChild(row);
+                    }
+                }
             });
         }
 

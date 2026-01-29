@@ -170,7 +170,7 @@ export default function ResultsSection() {
           </div>
         </div>
 
-        <div id="kml-summary" className="bg-white rounded-xl shadow-md border border-slate-200 hidden">
+        <div id="kml-summary" className="bg-white rounded-xl shadow-md border border-slate-200 hidden absolute top-6">
           <div className="p-6 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <div className="bg-purple-100 text-purple-600 p-2 rounded-full">

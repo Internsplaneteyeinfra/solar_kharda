@@ -534,11 +534,11 @@ async def get_weather():
             "latitude": lat,
             "longitude": lon,
             "hourly": "temperature_2m,relative_humidity_2m,windspeed_10m,cloudcover,shortwave_radiation",
-            "daily": "temperature_2m_max,temperature_2m_min",
+            "daily": "temperature_2m_max,temperature_2m_min,weather_code",
             "current": "temperature_2m,relative_humidity_2m,cloudcover,wind_speed_10m",
             "timezone": "auto",
             "past_days": 1,
-            "forecast_days": 1,
+            "forecast_days": 6,
             "windspeed_unit": "kmh"
         }
         
@@ -558,7 +558,8 @@ async def get_weather():
             raise HTTPException(status_code=500, detail="No hourly data available")
         
         latest_idx = len(times) - 1
-        latest_time = times[latest_idx]
+        # Use current time from API response if available, otherwise fallback to latest hourly time
+        latest_time = current.get('time', times[latest_idx])
         
         # Extract latest values
         temps = hourly.get('temperature_2m', [])
