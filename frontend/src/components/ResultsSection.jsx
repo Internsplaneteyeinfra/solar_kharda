@@ -181,7 +181,7 @@ export default function ResultsSection() {
             <p className="text-slate-500 mt-1">Overall statistics for all uploaded areas.</p>
           </div>
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div className="text-center">
                 <p className="text-2xl font-bold text-slate-800" id="total-areas">--</p>
                 <p className="text-sm text-slate-500">Total Areas</p>
@@ -202,14 +202,22 @@ export default function ResultsSection() {
           </div>
         </div>
 
-        <div id="power-line-details" className="bg-blue-50 border border-blue-200 rounded-lg p-6 hidden">
+        <div
+  id="power-line-details"
+  className="bg-[#0f172a]/90 backdrop-blur-md
+             border border-cyan-500/30 rounded-xl
+             shadow-[0_0_15px_rgba(6,182,212,0.15)]
+             p-2 w-[120px] h-[165px]
+             hidden flex flex-col justify-between"
+>
+
           <div className="flex items-center gap-3 mb-4">
             <div className="bg-blue-100 text-blue-600 p-2 rounded-full">
               <i data-lucide="zap" />
             </div>
             <h3 className="text-lg font-semibold text-blue-900">Power Line Information</h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="bg-white rounded-lg p-4 border border-blue-200">
               <div className="flex items-center gap-2 mb-2">
                 <i data-lucide="map-pin" className="w-4 h-4 text-blue-600" />
@@ -229,9 +237,9 @@ export default function ResultsSection() {
             <div className="bg-white rounded-lg p-4 border border-blue-200">
               <div className="flex items-center gap-2 mb-2">
                 <i data-lucide="activity" className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-900">Voltage Level</span>
+                <span className="text-lg font-bold text-blue-900">Voltage Level</span>
               </div>
-              <p id="voltage-level" className="text-2xl font-bold text-blue-700">--</p>
+              <p id="voltage-level" className="text-yellow-400 font-mono font-extrabold text-lg px-2 py-1 rounded">--</p>
               <p className="text-xs text-blue-600">Nearest power line</p>
             </div>
           </div>

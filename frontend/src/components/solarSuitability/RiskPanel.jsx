@@ -2,7 +2,7 @@ export default function RiskPanel() {
   return (
     <div
   id="risk-panel"
-  className="absolute right-0 translate-x-[40px]
+  className="absolute right-0 translate-x-[90px]
              h-[220px] w-[225px]
              bg-[#0f172a]/90 backdrop-blur-md
              rounded-xl border border-cyan-500/30

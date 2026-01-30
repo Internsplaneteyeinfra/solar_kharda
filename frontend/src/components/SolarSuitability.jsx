@@ -15,7 +15,35 @@ import RiskPanel from "./solarSuitability/RiskPanel";
 import "./solarSuitability/solarSuitability.css"
 
 export default function SolarSuitability() {
-  const[showSuggestions, setShowSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isKmlUploaded, setIsKmlUploaded] = useState(false);
+  const [isAnalysisComplete, setIsAnalysisComplete] = useState(false);
+  const [weatherCoords, setWeatherCoords] = useState(null);
+
+  useEffect(() => {
+    const handleKmlUploaded = () => {
+      setIsKmlUploaded(true);
+      setIsAnalysisComplete(false); // Reset analysis state on new upload
+      setShowSuggestions(false);
+    };
+    const handleAnalysisComplete = () => {
+      setIsAnalysisComplete(true);
+      setShowSuggestions(true);
+    };
+    const handleCoordsUpdate = (e) => {
+      setWeatherCoords(e.detail);
+    };
+    
+    window.addEventListener('kml-uploaded', handleKmlUploaded);
+    window.addEventListener('analysis-complete', handleAnalysisComplete);
+    window.addEventListener('kml-coords-update', handleCoordsUpdate);
+    
+    return () => {
+      window.removeEventListener('kml-uploaded', handleKmlUploaded);
+      window.removeEventListener('analysis-complete', handleAnalysisComplete);
+      window.removeEventListener('kml-coords-update', handleCoordsUpdate);
+    };
+  }, []);
 
   useEffect(() => {
   window.toGeoJSON = toGeoJSON;
@@ -58,11 +86,13 @@ export default function SolarSuitability() {
              <div className="bg-[#0f172a]/80 backdrop-blur-md rounded-xl border border-cyan-500/30 p-2 shadow-lg mb-2">
                  <Header />
              </div>
-             <WeatherPanel />
-             <div className="relative">
+             <div>
+                <WeatherPanel coords={weatherCoords} />
+             </div>
+             <div className={`relative ${!isAnalysisComplete ? 'hidden' : ''}`}>
                   <LandUsePanel />
                   <div className="absolute top-0 left-full ml-2 w-[300px] h-full">
-                      <RiskPanel />
+                      <RiskPanel className="h-full" />
                   </div>
               </div>
         </div>
@@ -70,10 +100,12 @@ export default function SolarSuitability() {
         {/* Center Column - Map View Area (Upload Card Centered) */}
         <div className="col-span-7 relative pointer-events-none">
             {/* Slope Panel on Map (Top Left) */}
-            <SlopePanel />
+            <div className={!isKmlUploaded ? 'hidden' : ''}>
+                <SlopePanel />
+            </div>
 
             {/* Map Controls - Top Right of Center Column */}
-            <div className="absolute top-2 right-2 z-30 pointer-events-auto flex gap-2">
+            <div className={`absolute top-2 right-2 z-30 pointer-events-auto flex gap-2 ${!isKmlUploaded ? 'hidden' : ''}`}>
                  <button
                     id="street-view-toggle"
                     className="bg-[#0f172a]/90 hover:bg-slate-800 text-cyan-400 p-3 rounded-full shadow-lg border border-cyan-500/30 transition-all hover:scale-110 active:scale-95"
@@ -99,8 +131,7 @@ export default function SolarSuitability() {
             </div>
 
             {/* Improvement Suggestions Overlay - Moved to Map Area */}
-            {showSuggestions &&(
-            <div className="absolute top-20 right-4 z-30 pointer-events-auto w-64 bg-gradient-to-br from-slate-900/95 to-cyan-950/40 backdrop-blur-lg p-4 rounded-xl border border-cyan-500/30 shadow-lg" id="suggestions-container">
+            <div className={`absolute top-20 right-4 z-30 pointer-events-auto w-64 bg-gradient-to-br from-slate-900/95 to-cyan-950/40 backdrop-blur-lg p-4 rounded-xl border border-cyan-500/30 shadow-lg ${!showSuggestions ? 'hidden' : ''}`} id="suggestions-container">
 
               <div className="flex items-center gap-2 mb-3 border-b border-cyan-500/20 pb-2 sticky top-0 bg-[#0f172a]/90 -mx-1 px-1">
                 <div className="bg-green-500/20 text-green-400 p-1.5 rounded-full">
@@ -115,7 +146,6 @@ export default function SolarSuitability() {
                 </li>
               </ul>
             </div>
-            )}
 
             {/* Upload Card - Centered absolutely or relatively */}
             <div id="upload-card-container" className="absolute top-8 left-1/2 transform -translate-x-1/2 w-full max-w-md pointer-events-auto z-30 transition-all duration-500">
@@ -124,34 +154,59 @@ export default function SolarSuitability() {
             
             {/* KML Summary & Power Line Details - Floating at bottom left */}
             {/* Bottom Floating Controls & Info */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-2 w-auto max-w-7xl pointer-events-auto z-30 flex flex-row items-end gap-4 overflow-x-auto pb-2 no-scrollbar">
+            <div className={`absolute bottom-5 left-1/2 -translate-x-14 w-auto max-w-7xl pointer-events-auto z-30 flex flex-row items-end gap-3 overflow-x-auto pb-2 no-scrollbar ${!isAnalysisComplete ? 'hidden' : ''}`}>
 
-                {/* KML Summary (Restored to floating position) */}
-                <div id="kml-summary" className="min-w-[220px] bg-[#0f172a]/90 backdrop-blur-md rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] p-6 hidden transition-all duration-300">
-                  <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase border-l-2 border-cyan-500 pl-2 mb-3">Area Summary</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-slate-900/50 p-2 rounded border border-slate-700/50 text-center">
-                        <span id="total-areas" className="block text-xl font-bold text-white leading-none">--</span>
-                        <span className="text-[10px] text-slate-400 uppercase">Areas</span>
+                {/* Wrapper to stack Wind Speed above KML Summary */}
+                <div className="flex flex-col gap-2 self-stretch">
+                    {/* Wind Speed Summary */}
+                    <div id="wind-speed-summary" className="bg-slate-900/90 backdrop-blur-md rounded-lg border border-cyan-500/30 p-2 w-[170px] flex flex-col justify-center shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+                      <div className="flex items-center gap-2 mb-1.5 border-b border-cyan-500/30 pb-1">
+                        <div className="bg-cyan-500/20 p-1 rounded">
+                          <i data-lucide="wind" className="w-3 h-3 text-cyan-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider leading-none">Wind Speed</h3>
+                          <span className="text-[8px] text-slate-400 leading-none">Analysis</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span className="text-slate-400">Value:</span>
+                          <span id="wind-speed-value" className="text-cyan-400 font-mono font-bold">--</span>
+                        </div>
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span className="text-slate-400">Score:</span>
+                          <span id="wind-speed-score" className="text-white font-mono">--</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="bg-slate-900/50 p-2 rounded border border-slate-700/50 text-center">
-                        <span id="average-score" className="block text-xl font-bold text-cyan-400 leading-none">--</span>
-                        <span className="text-[10px] text-slate-400 uppercase">Avg Score</span>
+
+                    {/* KML Summary */}
+                    <div id="kml-summary" className="bg-slate-900/90 backdrop-blur-md rounded-lg border border-cyan-500/30 p-2 w-[170px] flex flex-col justify-center shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+                  <div className="flex items-center gap-2 mb-1.5 border-b border-cyan-500/30 pb-1">
+                    <div className="bg-cyan-500/20 p-1 rounded">
+                      <i data-lucide="file-json" className="w-3 h-3 text-cyan-400" />
                     </div>
-                    <div className="bg-slate-900/50 p-2 rounded border border-slate-700/50 text-center">
-                        <span id="highest-score" className="block text-xl font-bold text-green-400 leading-none">--</span>
-                        <span className="text-[10px] text-slate-400 uppercase">High</span>
+                    <div>
+                      <h3 className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider leading-none">KML Summary</h3>
+                      <span className="text-[8px] text-slate-400 leading-none">File Details</span>
                     </div>
-                    <div className="bg-slate-900/50 p-2 rounded border border-slate-700/50 text-center">
-                        <span id="lowest-score" className="block text-xl font-bold text-red-400 leading-none">--</span>
-                        <span className="text-[10px] text-slate-400 uppercase">Low</span>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span className="text-slate-400">Total Area:</span>
+                      <span id="kml-total-area" className="text-cyan-400 font-mono font-bold">--</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span className="text-slate-400">Perimeter:</span>
+                      <span id="kml-perimeter" className="text-white font-mono">--</span>
                     </div>
                   </div>
                 </div>
+              </div>
 
-
-                {/* Power Line Details (Hidden by default) */}
-                <div id="power-line-details" className="min-w-[220px] bg-[#0f172a]/90 backdrop-blur-md rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] p-4 hidden transition-all duration-300">
+                {/* Power Line Details */}
+                <div id="power-line-details" className="min-w-[200px] bg-[#0f172a]/90 backdrop-blur-md rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] p-4 transition-all duration-300 self-stretch flex flex-col justify-center">
                   <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase border-l-2 border-cyan-500 pl-2 mb-3">Grid Connection</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center text-sm border-b border-slate-800 pb-1">
@@ -172,18 +227,32 @@ export default function SolarSuitability() {
                   </div>
                 </div>
 
+                <div id="water-availability-panel" className="max-w-[120px] bg-[#0f172a]/90 backdrop-blur-md rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] p-4 self-stretch flex flex-col justify-center ml-0.5">
+                  <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase border-l-2 border-cyan-500 pl-2 mb-3">Water Availability</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-sm border-b border-slate-800 pb-1">
+                        <span className="text-slate-400">Value</span>
+                        <span id="water-value" className="text-cyan-400 font-mono">--</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-400">Score</span>
+                        <span id="water-score" className="text-white font-mono">--</span>
+                    </div>
+                  </div>
+                </div>
+
                 <FilterPanel />
             </div>
         </div>
 
         {/* Right Column - Results & Recommendations */}
-        <div className="col-span-3 flex flex-col gap-4 pointer-events-auto z-20 overflow-y-auto no-scrollbar pb-20">
+        <div className={`col-span-3 flex flex-col gap-4 pointer-events-auto z-20 overflow-hidden pb-4 ${!isKmlUploaded ? 'hidden' : ''}`}>
              <ResultsSection />
         </div>
       </div>
         
       {/* Data Panel - Keep as floating or integrate? Keeping floating for now */}
-      <div className="absolute bottom-4 right-4 z-30 pointer-events-auto">
+      <div className={`absolute bottom-4 right-4 z-30 pointer-events-auto ${!isKmlUploaded ? 'hidden' : ''}`}>
            <DataPanel />
       </div>
     </div>
@@ -225,6 +294,8 @@ export function initAnalyzer() {
     const progressText = document.getElementById('progress-text');
     const progressPercentage = document.getElementById('progress-percentage');
     const progressBar = document.getElementById('progress-bar');
+    const windSpeedValueEl = document.getElementById('wind-speed-value');
+    const windSpeedScoreEl = document.getElementById('wind-speed-score');
 
     // Debug: Check if toggle elements exist
     console.log('Toggle elements found:', {
@@ -363,6 +434,9 @@ export function initAnalyzer() {
     });
 
     // --- Enhanced Decision Matrix Configuration (Updated Weights) ---
+    // Wind Speed Config - Separated from main parameters
+    const windSpeedConfig = { key: 'windSpeed', name: 'Wind Speed', weight: 0.02, unit: ' km/h', higherIsBetter: false, thresholds: { best: 20, worst: 90 }, suggestion: 'Site experiences high wind speeds, requiring more robust and expensive mounting structures.' };
+
     const parametersConfig = [
         { key: 'slope', name: 'Slope', weight: 0.20, unit: '°', higherIsBetter: false, thresholds: { best: 10.0, worst: 20 }, suggestion: 'Look for flatter terrain. High slopes increase construction costs and complexity.' },
         { key: 'ghi', name: 'Sunlight (GHI)', weight: 0.15, unit: ' kWh/m²/day', higherIsBetter: true, thresholds: { best: 4.0, worst: 3.0 }, suggestion: 'Site has lower than ideal solar irradiance. Consider areas with higher GHI for better energy yield.' },
@@ -375,7 +449,6 @@ export function initAnalyzer() {
         { key: 'soilStability', name: 'Soil Stability (Depth)', weight: 0.05, unit: ' cm', higherIsBetter: true, thresholds: { best: 100, worst: 20 }, suggestion: 'Shallow soil depth may complicate foundation work for panel mountings.' },
         { key: 'shading', name: 'Shading (Hillshade)', weight: 0.05, unit: '', higherIsBetter: true, thresholds: { best: 200, worst: 100 }, suggestion: 'Terrain analysis indicates potential shading from nearby hills, which will reduce energy output.' },
         { key: 'dust', name: 'Dust (Aerosol Index)', weight: 0.03, unit: '', higherIsBetter: false, thresholds: { best: 0.1, worst: 0.5 }, suggestion: 'High dust levels will require more frequent panel cleaning, increasing maintenance costs.' },
-        { key: 'windSpeed', name: 'Wind Speed', weight: 0.02, unit: ' km/h', higherIsBetter: false, thresholds: { best: 20, worst: 90 }, suggestion: 'Site experiences high wind speeds, requiring more robust and expensive mounting structures.' },
         { key: 'seismicRisk', name: 'Seismic Risk (PGA)', weight: 0.02, unit: ' g', higherIsBetter: false, thresholds: { best: 0.1, worst: 0.4 }, suggestion: 'High seismic risk requires specialized engineering for foundations and structures.' },
         { key: 'floodRisk', name: 'Flood Risk', weight: 0.02, unit: ' ha', higherIsBetter: false, thresholds: { best: 0, worst: 5 }, suggestion: 'A portion of the site is in a flood-prone area, posing a risk to equipment.' },
         { key: 'landOwnership', name: 'Land Ownership', weight: 0.06, suggestion: 'Private land ownership can lead to longer acquisition times and higher costs compared to government land.' },
@@ -954,6 +1027,56 @@ export function initAnalyzer() {
 
         console.log('Updating KML summary with', analysisResults.length, 'full area results');
         
+        // Calculate Area and Perimeter using Turf.js
+        let totalAreaSqM = 0;
+        let totalPerimeterKm = 0;
+
+        try {
+            if (currentKmlData && currentKmlData.features) {
+                // Calculate total area
+                totalAreaSqM = turf.area(currentKmlData);
+
+                // Calculate total perimeter
+                currentKmlData.features.forEach(feature => {
+                    if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+                        // Convert polygon to line to calculate length (perimeter)
+                        // turf.polygonToLine might return Feature or FeatureCollection (if holes)
+                        const line = turf.polygonToLine(feature);
+                        if (line) {
+                            // If it's a FeatureCollection (polygon with holes), sum all lines
+                            if (line.type === 'FeatureCollection') {
+                                line.features.forEach(f => {
+                                    totalPerimeterKm += turf.length(f, { units: 'kilometers' });
+                                });
+                            } else {
+                                totalPerimeterKm += turf.length(line, { units: 'kilometers' });
+                            }
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error calculating KML metrics:', error);
+        }
+
+        // Update KML Summary Panel
+        const kmlTotalAreaEl = document.getElementById('kml-total-area');
+        const kmlPerimeterEl = document.getElementById('kml-perimeter');
+
+        if (kmlTotalAreaEl) {
+            // Convert to sq km if large enough
+            if (totalAreaSqM >= 1000000) {
+                const areaKm2 = totalAreaSqM / 1000000;
+                kmlTotalAreaEl.textContent = `${areaKm2.toFixed(2)} km²`;
+            } else {
+                kmlTotalAreaEl.textContent = `${totalAreaSqM.toFixed(0)} m²`;
+            }
+        }
+
+        if (kmlPerimeterEl) {
+            kmlPerimeterEl.textContent = `${totalPerimeterKm.toFixed(2)} km`;
+        }
+        
         // Use full area results for summary statistics
         const scores = analysisResults.map(r => r.finalScore);
         const totalAreas = analysisResults.length; // Count of full areas, not sub-areas
@@ -1006,8 +1129,6 @@ export function initAnalyzer() {
         loader.classList.remove('hidden');
         errorMessage.classList.add('hidden');
         // mapSection.classList.add('hidden'); // Map should stay visible as background
-        kmlSummary.classList.add('hidden');
-        if (powerLineDetails) powerLineDetails.classList.add('hidden');
         hideProgress();
 
         const reader = new FileReader();
@@ -1016,6 +1137,17 @@ export function initAnalyzer() {
                 // Parse KML file
                 const kmlData = parseKmlFile(e.target.result);
                 currentKmlData = kmlData;
+                
+                // Calculate centroid and dispatch coordinates for WeatherPanel
+                const centroid = turf.centroid(kmlData);
+                if (centroid && centroid.geometry && centroid.geometry.coordinates) {
+                    const [lon, lat] = centroid.geometry.coordinates;
+                    window.dispatchEvent(new CustomEvent('kml-coords-update', { detail: { lat, lon } }));
+                    showNotification('Weather location updated to site', 'success');
+                }
+                
+                // Dispatch event to update React state
+                window.dispatchEvent(new Event('kml-uploaded'));
 
                 // Initialize map
                 initializeMap();
@@ -1162,6 +1294,10 @@ export function initAnalyzer() {
                 loader.classList.add('hidden');
                 resultsContent.classList.remove('hidden');
                 if (landUsePanel) landUsePanel.classList.remove('hidden');
+                
+                // Signal that analysis is complete and results are visible
+                window.dispatchEvent(new Event('analysis-complete'));
+                
                 lucide.createIcons();
 
             } catch (error) {
@@ -1309,6 +1445,13 @@ export function initAnalyzer() {
             console.log(`${param.name}: raw=${rawValue}, score=${score}, weight=${param.weight}, weighted=${weightedScore.toFixed(3)}`);
         });
 
+        // Add Wind Speed Score separately
+        let windRawValue = fixPrecisionIssues(windSpeedConfig.key, rawData[windSpeedConfig.key]);
+        let windScore = calculateScore(windRawValue, windSpeedConfig);
+        let windWeightedScore = windScore * windSpeedConfig.weight;
+        totalWeightedScore += windWeightedScore;
+        console.log(`${windSpeedConfig.name}: raw=${windRawValue}, score=${windScore}, weight=${windSpeedConfig.weight}, weighted=${windWeightedScore.toFixed(3)}`);
+
         // The totalWeightedScore is already on 0-10 scale (max possible = 10)
         // Return it as-is for 0-10 scale
         const finalScore = totalWeightedScore;
@@ -1445,7 +1588,13 @@ export function initAnalyzer() {
 
         // Helper to get parameter data
         const getParamData = (key) => {
-            const param = parametersConfig.find(p => p.key === key);
+            let param = parametersConfig.find(p => p.key === key);
+            
+            // Handle separated windSpeed parameter
+            if (key === 'windSpeed') {
+                param = windSpeedConfig;
+            }
+
             if (!param) return null;
             
             let rawValue = fixPrecisionIssues(param.key, rawData[param.key]);
@@ -1560,6 +1709,29 @@ export function initAnalyzer() {
                     return;
                 }
 
+                // Skip water availability from display table as requested
+                if (param.key === 'waterAvailability') {
+                    const waterData = getParamData(param.key);
+                    const waterValueEl = document.getElementById('water-value');
+                    const waterScoreEl = document.getElementById('water-score');
+
+                    if (waterData && waterValueEl && waterScoreEl) {
+                        waterValueEl.textContent = waterData.displayValue;
+                        waterScoreEl.textContent = waterData.score.toFixed(1);
+
+                        const waterScoreColor = waterData.score >= 7 ? 'text-green-400' : (waterData.score >= 4 ? 'text-amber-400' : 'text-red-400');
+                        waterScoreEl.className = `text-2xl font-bold ${waterScoreColor}`;
+                    }
+                    return;
+                }
+
+                // Skip proximity parameters from display table (shown in bottom panel)
+                /* Reverted as per user request to restore site and terrain parameters
+                if (param.key === 'proximityToLines' || param.key === 'proximityToRoads') {
+                    return;
+                }
+                */
+
                 // Skip flood risk from display table as requested (calculation remains unaffected)
                 if (param.key === 'floodRisk') {
                     const floodData = getParamData(param.key);
@@ -1623,6 +1795,16 @@ export function initAnalyzer() {
                     }
                 }
             });
+
+            // Manually render Wind Speed (Separated)
+            const windData = getParamData('windSpeed');
+            if (windData && windSpeedValueEl && windSpeedScoreEl) {
+                windSpeedValueEl.textContent = windData.displayValue;
+                windSpeedScoreEl.textContent = windData.score.toFixed(1);
+                
+                const scoreColorClass = windData.score >= 7 ? 'text-green-400' : (windData.score >= 4 ? 'text-amber-400' : 'text-red-400');
+                windSpeedScoreEl.className = `text-2xl font-bold ${scoreColorClass}`;
+            }
         }
 
         // Update summary

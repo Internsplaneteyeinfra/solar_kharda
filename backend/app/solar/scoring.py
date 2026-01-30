@@ -12,11 +12,12 @@ PARAMETERS_CONFIG = [
     { "key": 'soilStability', "name": 'Soil Stability (Depth)', "weight": 0.05, "unit": ' cm', "higherIsBetter": True, "thresholds": { "best": 100, "worst": 20 } },
     { "key": 'shading', "name": 'Shading (Hillshade)', "weight": 0.05, "unit": '', "higherIsBetter": True, "thresholds": { "best": 200, "worst": 100 } },
     { "key": 'dust', "name": 'Dust (Aerosol Index)', "weight": 0.03, "unit": '', "higherIsBetter": False, "thresholds": { "best": 0.1, "worst": 0.5 } },
-    { "key": 'windSpeed', "name": 'Wind Speed', "weight": 0.02, "unit": ' km/h', "higherIsBetter": False, "thresholds": { "best": 20, "worst": 90 } },
     { "key": 'seismicRisk', "name": 'Seismic Risk (PGA)', "weight": 0.02, "unit": ' g', "higherIsBetter": False, "thresholds": { "best": 0.1, "worst": 0.4 } },
     { "key": 'floodRisk', "name": 'Flood Risk', "weight": 0.02, "unit": ' ha', "higherIsBetter": False, "thresholds": { "best": 0, "worst": 5 } },
     { "key": 'landOwnership', "name": 'Land Ownership', "weight": 0.06 }
 ]
+
+WIND_SPEED_CONFIG = { "key": 'windSpeed', "name": 'Wind Speed', "weight": 0.02, "unit": ' km/h', "higherIsBetter": False, "thresholds": { "best": 20, "worst": 90 } }
 
 def fix_precision_issues(key, value):
     if value is None:
@@ -97,4 +98,9 @@ def calculate_final_weighted_score(raw_data):
             
         total_weighted_score += score * param['weight']
         
+    # Add Wind Speed Score separately
+    wind_raw_value = fix_precision_issues(WIND_SPEED_CONFIG['key'], raw_data.get(WIND_SPEED_CONFIG['key']))
+    wind_score = calculate_score(wind_raw_value, WIND_SPEED_CONFIG)
+    total_weighted_score += wind_score * WIND_SPEED_CONFIG['weight']
+
     return min(10, max(0, total_weighted_score))

@@ -511,22 +511,29 @@ def get_modis_lst_collection(aoi, start_date, end_date):
         return None
 
 @router.get("/api/weather")
-async def get_weather():
+async def get_weather(lat: Optional[float] = None, lon: Optional[float] = None):
     """Get current weather data from Open-Meteo API, with GHI from Earth Engine"""
     try:
-        # Get location from polygons (using first polygon center)
-        with open(POLYGONS_PATH_STR, 'r') as f:
-            geojson_data = json.load(f)
-        
-        if not geojson_data.get('features'):
-            raise HTTPException(status_code=404, detail="No polygons found")
-        
-        # Get first polygon for GHI calculation
-        first_polygon_feature = geojson_data['features'][0]
-        first_polygon = first_polygon_feature['geometry']['coordinates'][0]
-        lon = sum(coord[0] for coord in first_polygon) / len(first_polygon)
-        lat = sum(coord[1] for coord in first_polygon) / len(first_polygon)
-        
+        # If lat/lon provided, use them. Otherwise try to get from polygons file
+        if lat is None or lon is None:
+            # Get location from polygons (using first polygon center)
+            if os.path.exists(POLYGONS_PATH_STR):
+                with open(POLYGONS_PATH_STR, 'r') as f:
+                    geojson_data = json.load(f)
+                
+                if geojson_data.get('features'):
+                    # Get first polygon for GHI calculation
+                    first_polygon_feature = geojson_data['features'][0]
+                    first_polygon = first_polygon_feature['geometry']['coordinates'][0]
+                    # Simple centroid calculation for polygon ring
+                    lon = sum(coord[0] for coord in first_polygon) / len(first_polygon)
+                    lat = sum(coord[1] for coord in first_polygon) / len(first_polygon)
+            
+            # If still None (no file or empty), default to Kharda
+            if lat is None or lon is None:
+                 lat = 18.64
+                 lon = 75.11
+
         # Open-Meteo API endpoint for weather data (excluding GHI)
         url = "https://api.open-meteo.com/v1/forecast"
         

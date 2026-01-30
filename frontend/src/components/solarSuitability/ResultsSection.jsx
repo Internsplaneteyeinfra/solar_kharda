@@ -63,12 +63,12 @@ export default function ResultsSection() {
         {/* Slope - Single Parameter Display (Moved to SlopePanel on Map) */}
         
         {/* Site & Terrain Parameters Table */}
-        <div className="bg-[#0f172a]/90 backdrop-blur-md rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
-          <div className="p-5 border-b border-cyan-500/30">
+        <div className="bg-[#0f172a]/90 backdrop-blur-md rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] text-11px">
+          <div className="p-4 border-b border-cyan-500/30">
             <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase">Site & Terrain Parameters</h3>
             <p className="text-slate-400 text-[10px] mt-1">Topography, land use, and infrastructure.</p>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-hidden">
             <table className="min-w-full text-left text-xs text-slate-300">
               <thead className="bg-slate-800/50 text-cyan-400 uppercase font-medium">
                 <tr>

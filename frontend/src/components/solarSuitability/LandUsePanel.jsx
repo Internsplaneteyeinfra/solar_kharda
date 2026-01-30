@@ -5,7 +5,7 @@ export default function LandUsePanel() {
       className="bg-[#0f172a]/90 backdrop-blur-md rounded-xl border border-cyan-500/30
                  shadow-[0_0_20px_rgba(6,182,212,0.25)]
                  transition-all duration-500
-                 w-fit min-w-full"
+                 w-fit min-w-full max-w-[300px]"
     >
       <div className="p-5 border-b border-cyan-500/30">
         <h3 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase">Land Use & Ownership</h3>
@@ -18,12 +18,12 @@ export default function LandUsePanel() {
             <tr>
               <th className="px-6 py-3 tracking-wider border-b border-slate-700/50">Parameter</th>
               <th className="px-6 py-3 tracking-wider border-b border-slate-700/50">Raw Value</th>
-              <th className="px-6 py-3 tracking-wider border-b border-slate-700/50">Score (1-10)</th>
+             
             </tr>
           </thead>
           <tbody id="land-use-matrix-body" className="divide-y divide-slate-700/50">
             <tr>
-              <td colSpan="3" className="p-6 text-center text-slate-500 italic">
+              <td colSpan="2" className="p-6 text-center text-slate-500 italic">
                 Waiting for analysis...
               </td>
             </tr>

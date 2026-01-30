@@ -4,7 +4,7 @@ import { CloudSun, Wind, Droplets, Thermometer, Loader2, Sun } from 'lucide-reac
 
 const API_BASE = 'http://localhost:8000';
 
-export default function WeatherPanel() {
+export default function WeatherPanel({ coords }) {
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,7 +12,11 @@ export default function WeatherPanel() {
   useEffect(() => {
     const fetchWeather = async () => {
       try {
-        const response = await axios.get(`${API_BASE}/api/weather`);
+        let url = `${API_BASE}/api/weather`;
+        if (coords) {
+          url += `?lat=${coords.lat}&lon=${coords.lon}`;
+        }
+        const response = await axios.get(url);
         setWeather(response.data);
         setLoading(false);
       } catch (err) {
@@ -22,11 +26,16 @@ export default function WeatherPanel() {
       }
     };
 
+    // If coords changed, we might want to show loading state again
+    if (coords) {
+        setLoading(true);
+    }
+    
     fetchWeather();
     // Refresh every 10 minutes
     const interval = setInterval(fetchWeather, 600000);
     return () => clearInterval(interval);
-  }, []);
+  }, [coords]);
 
   if (loading) {
     return (
@@ -87,7 +96,9 @@ export default function WeatherPanel() {
       <div className="bg-[#0f172a]/80 backdrop-blur-md border border-cyan-500/30 p-3 rounded-xl text-white shadow-[0_0_15px_rgba(6,182,212,0.15)]">
         <div className="flex justify-between items-start mb-2">
           <div>
-            <h2 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase mb-0.5">Current Weather</h2>
+            <h2 className="text-cyan-400 text-xs font-semibold tracking-wider uppercase mb-0.5">
+              Current Weather {coords ? '(Site)' : ''}
+            </h2>
             <p className="text-[10px] text-slate-400">{dateStr}</p>
           </div>
           <CloudSun className="text-yellow-400 w-6 h-6" />
